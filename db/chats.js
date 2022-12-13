@@ -1,4 +1,4 @@
-const usersCharts = [
+const allChats = [
     {
         id: 2,
         chats: [
@@ -35,3 +35,5 @@ const usersCharts = [
         ]
     },
 ]
+
+module.exports = allChats;
