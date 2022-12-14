@@ -1,6 +1,9 @@
 const express = require('express');
+const Joi = require('joi')
+
 const {users, allChats} = require('../../db');
 const {getElementById, getByAny} = require('../../functions')
+const {userSchema} = require('../../schemas')
 
 const router = express.Router()
 
@@ -24,7 +27,7 @@ router.get('/search/user/', (req, res) => { // you can use any params to search 
     res.status(200).json({ 'user': user })
 })
 
-router.get('/:userId', (req, res) => { 
+router.get('/:userId', (req, res) => { //get a user with the given id
     const user = getElementById(users, req.params.userId)
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
     res.status(200).json({'user': user})
@@ -38,12 +41,19 @@ router.get('/:userId/friends', (req, res)=>{ //to get all friends of a user with
     let userFriends =  ''
     for (id of user.friendsId){ //getting the friends with their respective id's  in the user's friends list(friendsId)
         let friend = getElementById(users, id)
-        userFriends += (user.username + ' is a friend of ' + friend.username + '\n')              
+        userFriends += (user.username + ' is a friend of ' + friend.username + '\n') // creating sentences for user friends          
     }
     res.status(200).send(`${user.username} has ${totalFriends} friends. They are \n ${userFriends}`)
     
 })
 
+router.post('/',(req, res)=>{
+    const input = userSchema(req.body)
+    if (input.error) {
+        res.status(400).send(input.error.details[0].message);
+        return;
+    }
 
+})
 
 module.exports = router
