@@ -3,7 +3,7 @@ const Joi = require('joi')
 
 function userSchema(input) {
     const schema = Joi.object({
-        name: Joi.string().min(3).max(16).lowercase().required(),
+        name: Joi.string().min(3).max(16).valid().lowercase().required(),
         username: Joi.string().alphanum().min(3).max(16).required(),
         email: Joi.string().email().required(),
         password: Joi.string().alphanum().min(3).max(16).required(),

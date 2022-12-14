@@ -49,7 +49,7 @@ router.get('/:userId/friends', (req, res) => { //to get all friends of a user wi
 
 //new user sign up request
 router.post('/', (req, res) => {
-    const input = userSchema(req.body)
+    const input = userSchema(req.body) //validating req.body with schema
     if (input.error) {
         res.status(400).send(input.error.details[0].message);
         return;
@@ -66,6 +66,8 @@ router.post('/', (req, res) => {
 
     users.push(newUser);
     res.status(200).json({ 'user details': newUser })
+
+
 })
 
 
@@ -82,13 +84,13 @@ router.put('/:userId', (req, res) => {
     }
     //checking the existing users for the new username and new email address provided if it being used by another user
     for (element of users) {// an element is a user object
-        if (element !== user && element.username === user.username) { //only check if the element (user object) is not the current user
+        if (element !== user && element.username === req.body.username) { //only check if the element (user object) is not the current user
             return res.status(409).send('username already exists')
         }
     }
 
     for (element of users) {// an element is a user object
-        if (element !== user && element.email === user.email) {//only check if the element (user object) is not the current user
+        if (element !== user && element.email === req.body.email) {//only check if the element (user object) is not the current user
             return res.status(409).send('email already exists')
         }
 
@@ -119,7 +121,7 @@ router.patch('/:userId', (req, res) => {
 
     if (email) { //checking if the new email provided already exists(i.e being used by another user)
         for (element of users) { // an element is a user object
-            if (element !== user && element.email === user.email) { //only check if the element (user object) is not the current user
+            if (element !== user && element.email === req.body.email) { //only check if the element (user object) is not the current user
                 return res.status(409).send('email already exists')
             }
         }
@@ -128,7 +130,7 @@ router.patch('/:userId', (req, res) => {
 
     if (username) {//checking if the new username provided already exists(i.e being used by another user)
         for (element of users) {// an element is a user object
-            if (element !== user && element.username === user.username) {//only check if the element (user object) is not the current user
+            if (element !== user && element.username === req.body.username) {//only check if the element (user object) is not the current user
                 return res.status(409).send('email already exists')
             }
             user.username = username //if no user is using the username provided then proceed to updating the email
