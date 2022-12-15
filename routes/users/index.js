@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats } = require('../../db');
-const { getElementById, getByAny, getIndexById } = require('../../functions')
+const { getElementById, getByAny, getIndexById } = require('../../functions') //functions to get any element with the supplied arguments
 const { userSchema, userPatchSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -115,10 +115,18 @@ router.patch('/:userId', (req, res) => {
         return;
     }
     //any of these inputs if present will be updated to the new value
-    const { name, email, username } = req.body
+    const { name, email, username } = req.body //any of these inputs if present will be updated to the new value
 
-    if (name) user.name = name
+    if (name) user.name = name //if new name is provided then update existing value to the new value
 
+    if (username) {//checking if the new username provided already exists(i.e being used by another user)
+        for (element of users) {// an element is a user object
+            if (element !== user && element.username === req.body.username) {//only check if the element (user object) is not the current user
+                return res.status(409).send('username already exists')
+            }
+            user.username = username //if no user is using the username provided then proceed to updating the email
+        }
+    }
     if (email) { //checking if the new email provided already exists(i.e being used by another user)
         for (element of users) { // an element is a user object
             if (element !== user && element.email === req.body.email) { //only check if the element (user object) is not the current user
@@ -126,15 +134,6 @@ router.patch('/:userId', (req, res) => {
             }
         }
         user.email = email //if no user has the email address the proceed to updating the email
-    }
-
-    if (username) {//checking if the new username provided already exists(i.e being used by another user)
-        for (element of users) {// an element is a user object
-            if (element !== user && element.username === req.body.username) {//only check if the element (user object) is not the current user
-                return res.status(409).send('email already exists')
-            }
-            user.username = username //if no user is using the username provided then proceed to updating the email
-        }
     }
 
     res.status(200).json({ 'user updated info': user })
