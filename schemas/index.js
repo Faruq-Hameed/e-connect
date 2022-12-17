@@ -21,4 +21,11 @@ function userPatchSchema(input) {
     return schema.validate(input)
 }
 
-module.exports ={userSchema,userPatchSchema}
+function friendsSchema(input){
+    const schema = Joi.object({
+        userId: Joi.number().required(),
+        friendId: Joi.number().required()
+    })
+}
+
+module.exports ={userSchema,userPatchSchema,friendsSchema}
