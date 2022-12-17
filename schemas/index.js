@@ -16,6 +16,7 @@ function userPatchSchema(input) {
         name: Joi.string().min(3).max(16).lowercase(),
         username: Joi.string().alphanum().min(3).max(16),
         email: Joi.string().email(),
+        password: Joi.string().alphanum().min(3).max(16).required(),
     })
     return schema.validate(input)
 }

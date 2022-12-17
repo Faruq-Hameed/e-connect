@@ -1,4 +1,4 @@
-const usersPassword = [
+const usersPasswords = [
     {id: 1, password: "Password1"},
     {id: 2, password: "Password2"},
     {id: 3, password: "Password3"},
@@ -7,4 +7,4 @@ const usersPassword = [
     {id: 6, password: "Password6"}
 ]
 
-module.exports = usersPassword
+module.exports = usersPasswords

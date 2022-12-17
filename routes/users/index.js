@@ -1,7 +1,7 @@
 const express = require('express');
 const Joi = require('joi')
 
-const { users, allChats } = require('../../db');
+const { users, allChats, passwords } = require('../../db');
 const { getElementById, getByAny, getIndexById } = require('../../functions') //functions to get any element with the supplied arguments
 const { userSchema, userPatchSchema } = require('../../schemas')
 
@@ -61,8 +61,14 @@ router.post('/', (req, res) => {
     if (emailExist) return res.status(409).send('email already exists');
 
     const newUser = req.body
+
     newUser.id = users.length + 1;
     newUser.friendsId = []; //empty array because the user doesn't have friend yet
+
+    //the password will be stored in a secure place in the database and will be deleted from the user's database(from req.body)
+    const userPasswordInfo = { id: newUser.id, password: newUser.password }
+    delete newUser.password //deleting the password from the newUser object. It is already in where we want it stored
+    passwords.push(userPasswordInfo) //adding the password to the password dictionary. It can be gotten with the user id.
 
     users.push(newUser);
     res.status(200).json({ 'user details': newUser })
@@ -74,14 +80,18 @@ router.post('/', (req, res) => {
 //updating user details
 router.put('/:userId', (req, res) => {
     const user = getElementById(users, req.params.userId)
-    const userIndex = getIndexById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
 
+
+    const userIndex = getIndexById(users, req.params.userId)
     const input = userSchema(req.body)
+
     if (input.error) {
         res.status(400).send(input.error.details[0].message);
         return;
     }
+
+
     //checking the existing users for the new username and new email address provided if it being used by another user
     for (element of users) {// an element is a user object
         if (element !== user && element.username === req.body.username) { //only check if the element (user object) is not the current user
@@ -95,10 +105,16 @@ router.put('/:userId', (req, res) => {
         }
 
     }
+
+    // getting user password from secured database needed here for authorizing the user
+    const userPassword = getElementById(passwords, req.params.userId).password
+    if (req.body.password !== userPassword) return res.status(401).send('incorrect password'); // password is not changed here but needed for verification
+
     // if the new username and email provided are not being used then the update proceeds as expected below
     const updatedUser = req.body
     updatedUser.id = user.id; //retaining the original id because id is not changeable
     updatedUser.friendsId = user.friendsId;
+
     users.splice(userIndex, 1, updatedUser)
 
     res.status(200).json({ 'user updated info': updatedUser })
@@ -114,8 +130,16 @@ router.patch('/:userId', (req, res) => {
         res.status(400).send(input.error.details[0].message);
         return;
     }
+
+
+
     //any of these inputs if present will be updated to the new value
     const { name, email, username } = req.body //any of these inputs if present will be updated to the new value
+
+    // getting user password from secured database needed here for authorizing the user
+    // password is not changed here but needed for authorization purposes
+    const userPassword = getElementById(passwords, req.params.userId).password
+    if (req.body.password !== userPassword) return res.status(401).send('incorrect password');
 
     if (name) user.name = name //if new name is provided then update existing value to the new value
 
@@ -143,12 +167,19 @@ router.patch('/:userId', (req, res) => {
 router.delete('/:userId', (req, res) => {
     const user = getElementById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
-    if (req.body.password !== user.password) return res.status(401).send('incorrect password') //authorizing the user by checking password
+
+    //getting password from secured database for authorization
+    const userPassword = getElementById(passwords, req.params.userId).password //getting password from secured database
+    if (req.body.password !== userPassword) return res.status(401).send('incorrect password');
+    const userPasswordIndex = getIndexById(passwords, req.params.userId) //getting password from secured database
+    passwords.splice(userPasswordIndex, 1) // delete the user password from the server(secured database)
+
+
     const userIndex = getIndexById(users, req.params.userId) //getting the index of the user to delete
+    users.splice(userIndex, 1) // delete the user from the server(users list)
+
     //deleting the user chats history from the server by getting the index of the user chats in the server(chat.js)
     const userChatsIndex = getIndexById(allChats, req.params.userId)
-
-    users.splice(userIndex, 1) // delete the user from the server(users list)
     allChats.splice(userChatsIndex, 1) // delete the user chats from all chats in the server(chat.js)
 
     res.status(200).end('delete successful')
