@@ -22,6 +22,8 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
     res.status(200).send(`${user.username} has ${totalFriends} friends. They are \n ${userFriends}`)
 })
 
+
+
 //a user needs to know another user id to add them to friends list
 router.post('/addFriends', (req, res) => {
     const input = friendsSchema(req.body)
