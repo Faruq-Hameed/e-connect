@@ -69,11 +69,26 @@ router.post('/addFriends', (req, res) => {
     }
 
     //checking if the friend is already in the user's friends list i.e(friendId is already existing)
-    for (friendId in user.friendsId) {
-        if (friendId === newFriend.id) {
-            return res.status(404).send(`${newFriend.name} is already in your friend list`)
+    // for (friendId of user.friendsId) {
+    //     if (friendId === newFriend.id) {
+    //         return res.status(404).send(`${newFriend.name} is already in your friend list`)
+    //     }
+    // }
+
+    function checkIfFriendExists(user,arr){
+        for (friendId of user[arr]) {
+            if (friendId === newFriend.id) {
+                res.status(404).send(`${newFriend.name} is already in your friend list`)
+                return
+            }
         }
     }
+
+    checkIfFriendExists(user,'friendsId')
+    checkIfFriendExists(user,'awaitingFriendsId')
+    checkIfFriendExists(user,'incomingFriendsId')
+
+
 
     user.awaitingFriendsId.push(newFriend.id)   // adding the friend id to the awaitingFriendsId array
     newFriend.incomingFriendsId.push(user.id)
