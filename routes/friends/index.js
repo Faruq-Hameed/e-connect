@@ -9,35 +9,39 @@ const router = express.Router()
 
 
 //get all friends of a user with the userId
-router.get('/:userId/', (req, res) => { //to get all friends of a user with the userId
+router.get('/:userId/', (req, res) => { //to get all friends of a user with the userId provided in the request params
     const user = getElementById(users, req.params.userId)// each user has friendsId so we can get the friends with their various id's 
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
-    const totalFriends = user.friendsId.length
+    //The totalFriends is the total number of friends including the current, incoming and awaiting friends
+    const totalFriends = user.friendsId.length + user.incomingFriendsId.length + user.awaitingFriendsId.length 
     if (totalFriends === 0) return res.status(200).send(`${user.name} has no friends`)
     //The user's friends will returned as an array of objects
     //The users friends only contains Id's of their friends so we need to get those friends by their friendId
-    //and return the friend username and id as part of the response to the request on this router(api/friends/:userId)
-    const userFriends = [{currentFriends: []}, {awaitingFriends: []}, {incomingFriends: []}] 
+    //and return the friend username and id as the response to the request on this router(api/friends/:userId)
+    const userFriends = [{currentFriends: []}, {awaitingFriends: []}, {incomingFriends: []}] //the res to the req on this router
 
-    for (let i = 0; i < totalFriends; i++) { //getting the friends with their respective id's  in the user's friends list(friendsId)
-        let friend = getElementById(users, user.friendsId[i])
-        const usernameAndIds = { id: friend.id, username: friend.username }
+    for (let i = 0; i < user.friendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(friendsId)
+        if(user.friendsId.length < 1 ) break; // if the user has no friends i.e no current friend in his current friends list
+        let friend = getElementById(users, user.friendsId[i]) //each index(i) holds an element in the index in user.friendsId
+        const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id to be returned 
         userFriends[0].currentFriends.push(usernameAndIds)
     }
 
     for (let i = 0; i < user.awaitingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(awaitingFriendsId)
-        let friend = getElementById(users, user.awaitingFriends[i])
-        const usernameAndIds = { id: friend.id, username: friend.username }
+        if(user.friendsId.length < 1 ) break; // if the user has no awaiting friends request which he his waiting for approval
+        let friend = getElementById(users, user.awaitingFriendsId[i])//each index(i) holds an element in the index in user.awaitingFriendsId
+        const usernameAndIds = { id: friend.id, username: friend.username }//we only need the username and id to be returned 
         userFriends[1].awaitingFriends.push(usernameAndIds)
     }
 
     for (let i = 0; i < user.incomingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(incomingFriendsId)
-        let friend = getElementById(users, user.incomingFriendsId[i])
-        const usernameAndIds = { id: friend.id, username: friend.username }
+        if(user.friendsId.length < 1 ) break; // if the user has no incoming friends request that he hasn't responded to
+        let friend = getElementById(users, user.incomingFriendsId[i]) //each index(i) holds an element in the index in user.incomingFriendsId
+        const usernameAndIds = { id: friend.id, username: friend.username }//we only need the username and id to be returned 
         userFriends[2].incomingFriends.push(usernameAndIds)
     }
 
-    res.status(200).send(`${user.username} has ${totalFriends} friends. They are \n ${userFriends}`)
+    res.status(200).json({userFriends}) //returning the response as a json object 
 })
 
 
