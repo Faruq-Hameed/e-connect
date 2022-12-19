@@ -12,4 +12,5 @@ function getByAny(array, any, req){
     return element
 }
 
+
 module.exports = {getElementById, getByAny, getIndexById}
