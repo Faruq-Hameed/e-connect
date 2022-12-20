@@ -29,4 +29,13 @@ function friendsSchema(input) {
     return schema.validate(input)
 }
 
-module.exports ={userSchema,userPatchSchema,friendsSchema}
+function acceptFriendSchema(input) {
+    const schema = Joi.object({
+        userId: Joi.number().required(),
+        friendId: Joi.number().required(),
+        acceptRequest: Joi.boolean().required()
+    })
+    return schema.validate(input)
+}
+
+module.exports ={userSchema,userPatchSchema,friendsSchema,acceptFriendSchema}

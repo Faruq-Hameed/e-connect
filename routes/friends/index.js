@@ -1,9 +1,10 @@
+const { application } = require('express');
 const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
 const { getElementById, getByAny, getIndexById, getFriendsByIds } = require('../../functions') //functions to get any element with the supplied arguments
-const { userSchema, userPatchSchema, friendsSchema } = require('../../schemas')
+const { userSchema, userPatchSchema, friendsSchema, acceptFriendSchema } = require('../../schemas')
 
 const router = express.Router()
 
@@ -62,9 +63,9 @@ router.post('/addFriends', (req, res) => {
         return
     }
 
-    function checkIfFriendExists(user,arr){
+    function checkIfFriendExists(user,arr){ //user is the object and the arr( array of ids ) is an a property of the object.
         for (friendId of user[arr]) {
-            if (friendId === newFriend.id) {
+            if (friendId === newFriend.id) { //each iteration holds different id that it then checked against a particular id throughout
                 res.status(409).send(`${newFriend.name} is already in your friend list`)
                 return true //this return cannot terminate the whole request but rather terminate the function only
             }
@@ -84,4 +85,37 @@ router.post('/addFriends', (req, res) => {
     res.status(200).send(`Your friend request has been sent to ${newFriend.name}`)
     
 })
+
+router.put('/', (req, res) => {
+    const input = acceptFriendSchema(req.query) //the input field must contain a boolean value for acceptRequest
+    console.log(input)
+    if (input.error) {
+        res.status(400).send(input.error.details[0].message); // error handling
+        return;
+    }
+    const user = getElementById(users, req.query.userId)
+    const newFriend = getElementById(users,  req.query.friendId)
+
+
+    const friendIdIndex = user.incomingFriendsId.findIndex(req.query.friendId) // to check if the client sent an existing id and get it index
+    console.log(friendIdIndex)
+    if (friendIdIndex < 0) return res.status(404).send(`no friend request from ${newFriend.name}. Please check the provided friendId`);
+
+    for (friendId in user.incomingFriendsId) {//each friendId holds an element which is an id of a particular user(friend)
+        if (friendId === newFriend.friendId && req.query.acceptRequest) { //when the iteration element get to the new friendId & accept is true
+
+            newFriend.friendsId.push(req.query.friendId); // the friend request has  been accepted here and added to the friends list   
+
+            user.splice(friendIdIndex, 1) //removing the id from the incomingFriendsId once the request is accepted
+            const idInPendingFriendIds = newFriend.pendingFriendsId.indexOf(req.query.friendId) //get the id index in the friend pending friends list     
+            newFriend.splice(idInPendingFriendIds, 1) //removing the id from the pendingFriends id of the friend(newFriend) once the request is accepted
+
+        }
+
+    }
+
+    res.status(200).send(`friend request successfully accepted. The ${newFriend.username} will be notified`)
+
+})
+
 module.exports = router
