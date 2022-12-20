@@ -20,26 +20,20 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
     //and return the friend username and id as the response to the request on this router(api/friends/:userId)
     const userFriends = [{currentFriends: []}, {pendingFriends: []}, {incomingFriends: []}] //the res to the req on this router
 
-    for (let i = 0; i < user.friendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(friendsId)
-        if(user.friendsId.length < 1 ) break; // if the user has no friends i.e no current friend in his current friends list
-        let friend = getElementById(users, user.friendsId[i]) //each index(i) holds an element in the index in user.friendsId
-        const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id to be returned 
-        userFriends[0].currentFriends.push(usernameAndIds)
+    //function needed to prevent repetitions because this function replaced 3 similar logics from being re-written 
+    function createFriendsByIds(arr1, arr2, index) {
+        for (let i = 0; i < user[arr1].length; i++) { //arr1 is expected to be an array (e.g friendsId) which is a property of the user object
+            if (user[arr1].length < 1) break; // if the array is empty i.e no friends, then stop the iteration and the array is returned empty
+            let friend = getElementById(users, user[arr1][i]) //each index(i) holds an element in the index which is an id of another user(i.e friend)
+            const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id of the friend(s)to be returned 
+            userFriends[index][arr2].push(usernameAndIds) //pushing to the appropriate index(e.g index 0 is currentFriends array)
+        }
     }
+    createFriendsByIds('friendsId','currentFriends',0) //the index 0 is for currentFriends in userFriends and the correct array is friendsId in user
+    createFriendsByIds('pendingFriendsId','pendingFriends',1) //the index 0 is for pendingFriends in userFriends and the correct array is pendingFriendsId in user
+    createFriendsByIds('incomingFriendsId','incomingFriends',2)//the index 0 is for incomingFriends in userFriends and the correct array is     createFriendsByIds('incomingFriendsId','incomingFriends',2)//the index 0 is for incomingFriends and the correct array is pendingFriendsId in user
+    in user
 
-    for (let i = 0; i < user.pendingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(pendingFriendsId)
-        if(user.friendsId.length < 1 ) break; // if the user has no pending friends request which he his waiting for approval
-        let friend = getElementById(users, user.pendingFriendsId[i])//each index(i) holds an element in the index in user.pendingFriendsId
-        const usernameAndIds = { id: friend.id, username: friend.username }//we only need the username and id to be returned 
-        userFriends[1].pendingFriends.push(usernameAndIds)
-    }
-
-    for (let i = 0; i < user.incomingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(incomingFriendsId)
-        if(user.friendsId.length < 1 ) break; // if the user has no incoming friends request that he hasn't responded to
-        let friend = getElementById(users, user.incomingFriendsId[i]) //each index(i) holds an element in the index in user.incomingFriendsId
-        const usernameAndIds = { id: friend.id, username: friend.username }//we only need the username and id to be returned 
-        userFriends[2].incomingFriends.push(usernameAndIds)
-    }
 
     res.status(200).json({userFriends}) //returning the response as a json object 
 })
@@ -64,7 +58,7 @@ router.post('/addFriends', (req, res) => {
     if (!newFriend) return res.status(404).send(`the new friend with id ${req.body.friendId} does not exist`)
     
     if (user.id === newFriend.id) {// incase the user supplied the same userId as friendId in the request
-        res.status(404).send('you cannot add yourself as a friend')
+        res.status(409).send('you cannot add yourself as a friend')
         return
     }
 
