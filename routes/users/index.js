@@ -35,7 +35,7 @@ router.get('/:userId', (req, res) => { //get a user with the given id
 
 
 //new user sign up request
-router.post('/sign-up', (req, res) => {
+router.post('/', (req, res) => {
     const input = userSchema(req.body) //validating req.body with schema
     if (input.error) {
         res.status(400).send(input.error.details[0].message);
@@ -51,6 +51,9 @@ router.post('/sign-up', (req, res) => {
 
     newUser.id = users.length + 1;
     newUser.friendsId = []; //empty array because the user doesn't have friend yet
+    newUser.incomingFriendsId = []; //empty array because the user doesn't have any request friend yet
+    newUser.pendingFriendsId = []; //empty array because the user haven't sent out any friend request yet
+    
 
     //the password will be stored in a secure place in the database and will be deleted from the user's database(from req.body)
     const userPasswordInfo = { id: newUser.id, password: newUser.password }

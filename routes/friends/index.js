@@ -12,13 +12,13 @@ const router = express.Router()
 router.get('/:userId/', (req, res) => { //to get all friends of a user with the userId provided in the request params
     const user = getElementById(users, req.params.userId)// each user has friendsId so we can get the friends with their various id's 
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
-    //The totalFriends is the total number of friends including the current, incoming and awaiting friends
-    const totalFriends = user.friendsId.length + user.incomingFriendsId.length + user.awaitingFriendsId.length 
+    //The totalFriends is the total number of friends including the current, incoming and pending friends
+    const totalFriends = user.friendsId.length + user.incomingFriendsId.length + user.pendingFriendsId.length 
     if (totalFriends === 0) return res.status(200).send(`${user.name} has no friends`)
     //The user's friends will returned as an array of objects
     //The users friends only contains Id's of their friends so we need to get those friends by their friendId
     //and return the friend username and id as the response to the request on this router(api/friends/:userId)
-    const userFriends = [{currentFriends: []}, {awaitingFriends: []}, {incomingFriends: []}] //the res to the req on this router
+    const userFriends = [{currentFriends: []}, {pendingFriends: []}, {incomingFriends: []}] //the res to the req on this router
 
     for (let i = 0; i < user.friendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(friendsId)
         if(user.friendsId.length < 1 ) break; // if the user has no friends i.e no current friend in his current friends list
@@ -27,11 +27,11 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
         userFriends[0].currentFriends.push(usernameAndIds)
     }
 
-    for (let i = 0; i < user.awaitingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(awaitingFriendsId)
-        if(user.friendsId.length < 1 ) break; // if the user has no awaiting friends request which he his waiting for approval
-        let friend = getElementById(users, user.awaitingFriendsId[i])//each index(i) holds an element in the index in user.awaitingFriendsId
+    for (let i = 0; i < user.pendingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(pendingFriendsId)
+        if(user.friendsId.length < 1 ) break; // if the user has no pending friends request which he his waiting for approval
+        let friend = getElementById(users, user.pendingFriendsId[i])//each index(i) holds an element in the index in user.pendingFriendsId
         const usernameAndIds = { id: friend.id, username: friend.username }//we only need the username and id to be returned 
-        userFriends[1].awaitingFriends.push(usernameAndIds)
+        userFriends[1].pendingFriends.push(usernameAndIds)
     }
 
     for (let i = 0; i < user.incomingFriendsId.length; i++) { //getting the friends with their respective id's  in the user's friends list(incomingFriendsId)
@@ -68,29 +68,23 @@ router.post('/addFriends', (req, res) => {
         return
     }
 
-    //checking if the friend is already in the user's friends list i.e(friendId is already existing)
-    // for (friendId of user.friendsId) {
-    //     if (friendId === newFriend.id) {
-    //         return res.status(404).send(`${newFriend.name} is already in your friend list`)
-    //     }
-    // }
-
     function checkIfFriendExists(user,arr){
         for (friendId of user[arr]) {
             if (friendId === newFriend.id) {
-                res.status(404).send(`${newFriend.name} is already in your friend list`)
-                return
+                res.status(409).send(`${newFriend.name} is already in your friend list`)
+                return true //this return cannot terminate the whole request but rather terminate the function only
             }
         }
     }
+    //preventing a friend request not to be sent to a user if the friendId is already in the user's friend list in any way.
+    //i.e if it is present in current friend list or pending friend lists or the incoming friend list.
+    if (checkIfFriendExists(user, 'friendsId') || checkIfFriendExists(user, 'pendingFriendsId') ||checkIfFriendExists(user, 'incomingFriendsId')){
+        return //If the above result is true then the function response is sent to the client and the whole process terminate thereafter
+        //the return key word is needed so that the user friend's request won't be sent again after the conflict message is sent
+    }
+  
 
-    checkIfFriendExists(user,'friendsId')
-    checkIfFriendExists(user,'awaitingFriendsId')
-    checkIfFriendExists(user,'incomingFriendsId')
-
-
-
-    user.awaitingFriendsId.push(newFriend.id)   // adding the friend id to the awaitingFriendsId array
+    user.pendingFriendsId.push(newFriend.id)   // adding the friend id to the pendingFriendsId array
     newFriend.incomingFriendsId.push(user.id)
 
     res.status(200).send(`Your friend request has been sent to ${newFriend.name}`)
