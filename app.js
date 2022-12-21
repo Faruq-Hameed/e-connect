@@ -17,7 +17,7 @@ app.use('/api/friends', friends)
 
 
 app.use('*', (req, res) =>{
-    res.status(400).send('unknown url')
+    res.status(400).send('unknown url') //handling all bad url requests
 })
 
 app.listen(port, (req, res) =>{

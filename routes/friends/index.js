@@ -88,7 +88,6 @@ router.post('/addFriends', (req, res) => {
 
 router.put('/', (req, res) => {
     const input = acceptFriendSchema(req.query) //the input field must contain a boolean value for acceptRequest
-    console.log(input)
     if (input.error) {
         res.status(400).send(input.error.details[0].message); // error handling
         return;
@@ -97,24 +96,38 @@ router.put('/', (req, res) => {
     const newFriend = getElementById(users,  req.query.friendId)
 
 
-    const friendIdIndex = user.incomingFriendsId.findIndex(req.query.friendId) // to check if the client sent an existing id and get it index
-    console.log(friendIdIndex)
+    const friendIdIndex = user.incomingFriendsId.findIndex(element => element === parseInt(req.query.friendId)) // to get the index of the friendid in the user's incoming friendsId
+    const idInPendingFriendIds = newFriend.pendingFriendsId.indexOf(parseInt(req.query.friendId)) //get the id index in the friend pending friends list if it exist there
+
+
     if (friendIdIndex < 0) return res.status(404).send(`no friend request from ${newFriend.name}. Please check the provided friendId`);
+  
 
-    for (friendId in user.incomingFriendsId) {//each friendId holds an element which is an id of a particular user(friend)
-        if (friendId === newFriend.friendId && req.query.acceptRequest) { //when the iteration element get to the new friendId & accept is true
-
-            newFriend.friendsId.push(req.query.friendId); // the friend request has  been accepted here and added to the friends list   
-
-            user.splice(friendIdIndex, 1) //removing the id from the incomingFriendsId once the request is accepted
-            const idInPendingFriendIds = newFriend.pendingFriendsId.indexOf(req.query.friendId) //get the id index in the friend pending friends list     
-            newFriend.splice(idInPendingFriendIds, 1) //removing the id from the pendingFriends id of the friend(newFriend) once the request is accepted
-
+    if (!req.query.acceptRequest === 'false') {//if the user doesn't want to accept the friend request
+        for (friendId of user.incomingFriendsId) {//each friendId holds an element which is an id of a particular user(friend)
+            console.log('reject friend request')
+            if (friendId === newFriend.id) {
+                user.incomingFriendsId.splice(friendIdIndex, 1) //removing the id from the incomingFriendsId since the request is not accepted  
+                res.status(200).send(`You rejected the friend request of ${newFriend.username}. You can add him later in the future.`);
+                return
+            }
         }
-
     }
 
-    res.status(200).send(`friend request successfully accepted. The ${newFriend.username} will be notified`)
+    for (friendId of user.incomingFriendsId) {//each friendId holds an element which is an id of a particular user(friend)
+        if (friendId === newFriend.id && req.query.acceptRequest === 'true') { //when the iteration element get to the new friend id & accept is true
+
+            user.friendsId.push(newFriend.id) //add the new friend id to the list of the user's friends (i.e friendsId)        
+            newFriend.friendsId.push(parseInt(req.query.userId)); // the friend request has  been accepted here and added user id to the friends friend's list too   
+
+            user.incomingFriendsId.splice(friendIdIndex, 1) //removing the id from the incomingFriendsId once the request is accepted            
+            newFriend.pendingFriendsId.splice(idInPendingFriendIds, 1) //removing the id from the pendingFriends id of the friend(newFriend) once the request is accepted
+
+            res.status(200).send(`friend request successfully accepted. The ${newFriend.username} will be notified`)
+
+        }
+    }
+
 
 })
 
