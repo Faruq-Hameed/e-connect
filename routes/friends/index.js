@@ -50,7 +50,6 @@ router.post('/addFriends', (req, res) => {
     }
 
     // A sent request is sent to the new friend with the friendId to accept the request or reject
-    //The user will not be notified if the request is rejected but notice if the request is accepted in his friendId list
     const user = getElementById(users, req.body.userId)
     const newFriend = getElementById(users,  req.body.friendId)
 
@@ -102,20 +101,23 @@ router.put('/', (req, res) => {
 
     if (friendIdIndex < 0) return res.status(404).send(`no friend request from ${newFriend.name}. Please check the provided friendId`);
   
-
-    if (!req.query.acceptRequest === 'false') {//if the user doesn't want to accept the friend request
+    if (req.query.acceptRequest === 'false') {//if the user doesn't want to accept the friend request
         for (friendId of user.incomingFriendsId) {//each friendId holds an element which is an id of a particular user(friend)
-            console.log('reject friend request')
-            if (friendId === newFriend.id) {
-                user.incomingFriendsId.splice(friendIdIndex, 1) //removing the id from the incomingFriendsId since the request is not accepted  
+            if (friendId === newFriend.id) { //when the loops get to the new friend id (inside of the user.incomingFriendsId array)
+                user.incomingFriendsId.splice(friendIdIndex, 1) //removing the id from the incomingFriendsId since the request is not accepted
+                newFriend.pendingFriendsId.splice(idInPendingFriendIds, 1) //removing the id from the pendingFriends id of the friend(newFriend) too
+                
+                //the friend will not be notified if the request is rejected but notice if the request is accepted in his friendId list
                 res.status(200).send(`You rejected the friend request of ${newFriend.username}. You can add him later in the future.`);
-                return
+                return //the req is ended and the above response sent. The process is terminated here
             }
         }
     }
 
+    //if the friend request is to be accepted;
     for (friendId of user.incomingFriendsId) {//each friendId holds an element which is an id of a particular user(friend)
-        if (friendId === newFriend.id && req.query.acceptRequest === 'true') { //when the iteration element get to the new friend id & accept is true
+        if (friendId === newFriend.id) //when the iteration element get to the new friend id
+        if (req.query.acceptRequest === 'true') {  // if the user wants to accept the friend request
 
             user.friendsId.push(newFriend.id) //add the new friend id to the list of the user's friends (i.e friendsId)        
             newFriend.friendsId.push(parseInt(req.query.userId)); // the friend request has  been accepted here and added user id to the friends friend's list too   
@@ -126,6 +128,8 @@ router.put('/', (req, res) => {
             res.status(200).send(`friend request successfully accepted. The ${newFriend.username} will be notified`)
 
         }
+
+
     }
 
 
