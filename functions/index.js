@@ -12,5 +12,10 @@ function getByAny(array, any, req){
     return element
 }
 
+function findIndexOf(array, element){
+    const index = array.findIndex(e => e === parseInt(element))
+    return index
+}
 
-module.exports = {getElementById, getByAny, getIndexById}
+
+module.exports = {getElementById, getByAny, getIndexById, findIndexOf}

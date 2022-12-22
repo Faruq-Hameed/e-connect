@@ -48,6 +48,7 @@ router.post('/', (req, res) => {
     if (emailExist) return res.status(409).send('email already exists');
 
     const newUser = req.body
+    const newUserChats = {id : newUser.id, chats: []} //crating an empty chats object for the new user in the database
 
     newUser.id = users.length + 1;
     newUser.friendsId = []; //empty array because the user doesn't have friend yet
@@ -59,8 +60,9 @@ router.post('/', (req, res) => {
     const userPasswordInfo = { id: newUser.id, password: newUser.password }
     delete newUser.password //deleting the password from the newUser object. It is already in where we want it stored
     passwords.push(userPasswordInfo) //adding the password to the password dictionary. It can be gotten with the user id.
-
-    users.push(newUser);
+    
+    allChats.push(newUserChats) //adding the empty chats array fot the user
+    users.push(newUserChats);
     res.status(200).json({ 'user details': newUser })
 
 

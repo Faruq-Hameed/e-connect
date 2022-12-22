@@ -1,10 +1,9 @@
-const { application } = require('express');
 const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getElementById, getByAny, getIndexById, getFriendsByIds } = require('../../functions') //functions to get any element with the supplied arguments
-const { userSchema, userPatchSchema, friendsSchema, acceptFriendSchema } = require('../../schemas')
+const { getElementById,findIndexOf,} = require('../../functions') //functions to get any element with the supplied arguments
+const {  friendsSchema, acceptFriendSchema } = require('../../schemas')
 
 const router = express.Router()
 
@@ -23,8 +22,10 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
 
     //function needed to prevent repetitions because this function replaced 3 similar logics from being re-written 
     function createFriendsByIds(arr1, arr2, index) {
+
         for (let i = 0; i < user[arr1].length; i++) { //arr1 is expected to be an array (e.g friendsId) which is a property of the user object
             if (user[arr1].length < 1) break; // if the array is empty i.e no friends, then stop the iteration and the array is returned empty
+            
             let friend = getElementById(users, user[arr1][i]) //each index(i) holds an element in the index which is an id of another user(i.e friend)
             const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id of the friend(s)to be returned 
             userFriends[index][arr2].push(usernameAndIds) //pushing to the appropriate index(e.g index 0 is currentFriends array)
@@ -43,9 +44,9 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
 
 //a user needs to know another user id to add them to friends list
 router.post('/addFriends', (req, res) => {
-    const input = friendsSchema(req.body)
-    if (input.error) {
-        res.status(400).send(input.error.details[0].message); // error handling
+    const validation = friendsSchema(req.body)
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message); // error handling
         return;
     }
 
@@ -86,19 +87,19 @@ router.post('/addFriends', (req, res) => {
 })
 
 router.put('/', (req, res) => {
-    const input = acceptFriendSchema(req.query) //the input field must contain a boolean value for acceptRequest
-    if (input.error) {
-        res.status(400).send(input.error.details[0].message); // error handling
+    const validation = acceptFriendSchema(req.query) //the input field must contain a boolean value for acceptRequest
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message); // error handling
         return;
     }
     const user = getElementById(users, req.query.userId)
     const newFriend = getElementById(users, req.query.friendId)
 
 
-    const friendIdIndex = user.incomingFriendsId.findIndex(element => element === parseInt(req.query.friendId)) // to get the index of the friendid in the user's incoming friendsId
-    const idInPendingFriendIds = newFriend.pendingFriendsId.indexOf(parseInt(req.query.friendId)) //get the id index in the friend pending friends list if it exist there
+    const friendIdIndex = findIndexOf(user.incomingFriendsId, req.query.friendId) // to get the index of the friendid in the user's incoming friendsId
+    const idInPendingFriendIds = findIndexOf(newFriend.pendingFriendsId, req.query.userId) //get the id index in the friend pending friends list if it exist there
 
-    if (friendIdIndex < 0) return res.status(404).send(`no friend request from ${newFriend.name}. Please check the provided friendId`);
+    if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${newFriend.name} in your friend list. Please check the provided friendId`);
 
     user.incomingFriendsId.splice(friendIdIndex, 1) //removing the id from the user's incomingFriendsId since it will attended to          
     newFriend.pendingFriendsId.splice(idInPendingFriendIds, 1) //removing the id from the pendingFriends id of the friend(newFriend) too
@@ -108,7 +109,16 @@ router.put('/', (req, res) => {
         user.friendsId.push(newFriend.id) //add the new friend id to the list of the user's friends (i.e friendsId)        
         newFriend.friendsId.push(parseInt(req.query.userId)); // the friend request has  been accepted here and added user id to the friends friend's list too   
 
-        return res.status(200).send(`friend request successfully accepted. The ${newFriend.username} will be notified`)
+        //creating an empty chat object for the user and the new friend in the database
+        const userChats = getElementById(allChats, req.query.userId)//getting all the user's chats from the database(chats.js)
+        const friendChats = getElementById(allChats, req.query.friendId) //getting all the friend's chats from the database(chats.js)
+        
+        const userChatsWithFriend =  {friendId: newFriend.id, chats: '', lastChatted: Date} //creating an empty chat object for the new friend
+
+        userChats.push(userChatsWithFriend) //adding the new chat object for the user
+        friendChats.push(userChatsWithFriend)//adding the same new chat object for the friend
+
+        return res.status(200).send(`friend request successfully accepted. You can message ${newFriend.username}. ${newFriend.username} will be notified`)
     }
 
     if (req.query.acceptRequest === 'false') {//if the user doesn't want to accept the friend request the friend will not be notified
@@ -117,8 +127,27 @@ router.put('/', (req, res) => {
 
 })
 
-router.delete('/:userId/:friendId', (req, res) =>{
-    
+router.delete('/', (req, res) =>{
+    const validation = friendsSchema(req.query)
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message); // error handling
+        return;
+    }
+
+    const user = getElementById(users, req.query.userId) //using the provided userId to get the user object from the database
+    const friend = getElementById(users, req.query.friendId) //using the provided friendId to get the friend(user) object from the database
+
+
+    const friendIdIndex = findIndexOf(user.friendsId, req.query.friendId)   // to find the index of the friend id in the user's friendsId
+    const userIdIndex =findIndexOf(friend.friendsId, req.query.userId) //find the id index of the user in the friend's friendsId too
+
+    if (friendIdIndex < 0) return res.status(404).send(`no friend request from ${friend.name}. Please check the provided friendId`);
+
+    user.friendsId.splice(friendIdIndex, 1) //removing the id from the user's friends list 
+    friend.friendsId.splice(userIdIndex, 1) //removing the id of the user from the friend's friends list too
+
+    res.status(200).send('friend successfully deleted')
+
 })
 
 module.exports = router

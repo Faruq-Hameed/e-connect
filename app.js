@@ -1,8 +1,7 @@
-const { application } = require('express')
 const express = require('express')
 const logger = require('morgan')
 require('dotenv').config({path: './.env'})
-const {users, friends} = require('./routes')
+const {users, friends, chats} = require('./routes')
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -14,6 +13,7 @@ app.use(express.urlencoded({extended: true}))
 
 app.use('/api/users', users)
 app.use('/api/friends', friends)
+app.use('/api/chats', chats)
 
 
 app.use('*', (req, res) =>{

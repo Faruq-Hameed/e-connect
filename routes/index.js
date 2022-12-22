@@ -1,4 +1,4 @@
 const users = require('./users');
 const friends = require('./friends')
-
-module.exports = {users,friends}
+const chats = require('./chats')
+module.exports = {users,friends, chats}
