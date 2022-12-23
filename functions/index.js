@@ -1,15 +1,15 @@
-function getElementById(array, id) {
-    const element = array.find(obj => obj.id === parseInt(id))
-    return element
+function getObjectById(array, id) {
+    const object = array.find(obj => obj.id === parseInt(id))
+    return object
 }
 
 function getIndexById(array, id) {
     const index = array.findIndex(obj => obj.id === parseInt(id))
     return index
 }
-function getByAny(array, any, req){
-    const element = array.find(obj => obj[any] === req[any])
-    return element
+function getObjectByAny(array, any, req){
+    const object = array.find(obj => obj[any] === req[any])
+    return object
 }
 
 function findIndexOf(array, element){
@@ -18,4 +18,4 @@ function findIndexOf(array, element){
 }
 
 
-module.exports = {getElementById, getByAny, getIndexById, findIndexOf}
+module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf}

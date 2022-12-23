@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getElementById,findIndexOf,} = require('../../functions') //functions to get any element with the supplied arguments
+const { getObjectById,findIndexOf,} = require('../../functions') //functions to get any object in array with the supplied arguments
 const {  friendsSchema, acceptFriendSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -10,7 +10,7 @@ const router = express.Router()
 
 //get all friends of a user with the userId
 router.get('/:userId/', (req, res) => { //to get all friends of a user with the userId provided in the request params
-    const user = getElementById(users, req.params.userId)// each user has friendsId so we can get the friends with their various id's 
+    const user = getObjectById(users, req.params.userId)// each user has friendsId so we can get the friends with their various id's 
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
     //The totalFriends is the total number of friends including the current, incoming and pending friends
     const totalFriends = user.friendsId.length + user.incomingFriendsId.length + user.pendingFriendsId.length
@@ -26,7 +26,7 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
         for (let i = 0; i < user[arr1].length; i++) { //arr1 is expected to be an array (e.g friendsId) which is a property of the user object
             if (user[arr1].length < 1) break; // if the array is empty i.e no friends, then stop the iteration and the array is returned empty
             
-            let friend = getElementById(users, user[arr1][i]) //each index(i) holds an element in the index which is an id of another user(i.e friend)
+            let friend = getObjectById(users, user[arr1][i]) //each index(i) holds an element in the index which is an id of another user(i.e friend) object
             const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id of the friend(s)to be returned 
             userFriends[index][arr2].push(usernameAndIds) //pushing to the appropriate index(e.g index 0 is currentFriends array)
         }
@@ -51,8 +51,8 @@ router.post('/addFriends', (req, res) => {
     }
 
     // A sent request is sent to the new friend with the friendId to accept the request or reject
-    const user = getElementById(users, req.body.userId)
-    const newFriend = getElementById(users, req.body.friendId)
+    const user = getObjectById(users, req.body.userId)
+    const newFriend = getObjectById(users, req.body.friendId)
 
 
     if (!user) return res.status(404).send(`user with id ${req.body.userId} does not exist`)
@@ -92,8 +92,8 @@ router.put('/', (req, res) => {
         res.status(400).send(validation.error.details[0].message); // error handling
         return;
     }
-    const user = getElementById(users, req.query.userId)
-    const newFriend = getElementById(users, req.query.friendId)
+    const user = getObjectById(users, req.query.userId)
+    const newFriend = getObjectById(users, req.query.friendId)
 
 
     const friendIdIndex = findIndexOf(user.incomingFriendsId, req.query.friendId) // to get the index of the friendid in the user's incoming friendsId
@@ -110,8 +110,8 @@ router.put('/', (req, res) => {
         newFriend.friendsId.push(parseInt(req.query.userId)); // the friend request has  been accepted here and added user id to the friends friend's list too   
 
         //creating an empty chat object for the user and the new friend in the database
-        const userChats = getElementById(allChats, req.query.userId)//getting all the user's chats from the database(chats.js)
-        const friendChats = getElementById(allChats, req.query.friendId) //getting all the friend's chats from the database(chats.js)
+        const userChats = getObjectById(allChats, req.query.userId)//getting all the user's chats from the database(chats.js)
+        const friendChats = getObjectById(allChats, req.query.friendId) //getting all the friend's chats from the database(chats.js)
         
         const userChatsWithFriend =  {friendId: newFriend.id, chats: '', lastChatted: Date} //creating an empty chat object for the new friend
 
@@ -134,8 +134,8 @@ router.delete('/', (req, res) =>{
         return;
     }
 
-    const user = getElementById(users, req.query.userId) //using the provided userId to get the user object from the database
-    const friend = getElementById(users, req.query.friendId) //using the provided friendId to get the friend(user) object from the database
+    const user = getObjectById(users, req.query.userId) //using the provided userId to get the user object from the database
+    const friend = getObjectById(users, req.query.friendId) //using the provided friendId to get the friend(user) object from the database
 
 
     const friendIdIndex = findIndexOf(user.friendsId, req.query.friendId)   // to find the index of the friend id in the user's friendsId

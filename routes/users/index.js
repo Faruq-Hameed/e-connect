@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getElementById, getByAny, getIndexById } = require('../../functions') //functions to get any element with the supplied arguments
+const { getObjectById, getObjectByAny, getIndexById } = require('../../functions') //functions to get any object in an array with the supplied arguments
 const { userSchema, userPatchSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -14,13 +14,13 @@ router.get('/', (req, res) => {
 router.get('/search/user/', (req, res) => { // you can use any params to search for a user
     let user;
     if (req.query.username) {//using username to get a particular user 
-        user = getByAny(users, 'username', req.query)
+        user = getObjectByAny(users, 'username', req.query)
     }
     else if (req.query.name) {//using name to get a particular user 
-        user = getByAny(users, 'name', req.query)
+        user = getObjectByAny(users, 'name', req.query)
     }
     else if (req.query.email) {//using email to get a particular user 
-        user = getByAny(users, 'email', req.query)
+        user = getObjectByAny(users, 'email', req.query)
     }
     if (!user) return res.status(404).send(`user not found`) //for unknown users
 
@@ -28,7 +28,7 @@ router.get('/search/user/', (req, res) => { // you can use any params to search 
 })
 
 router.get('/:userId', (req, res) => { //get a user with the given id
-    const user = getElementById(users, req.params.userId)
+    const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
     res.status(200).json({ 'user': user })
 })
@@ -42,8 +42,8 @@ router.post('/', (req, res) => {
         return;
     }
     //preventing the duplication of email addresses or usernames in the database
-    const usernameExist = getByAny(users, 'username', req.body); //getting the user with the username from any of the users if it exists
-    const emailExist = getByAny(users, 'email', req.body); //getting the user with the email from any of the users if it exists
+    const usernameExist = getObjectByAny(users, 'username', req.body); //getting the user with the username from any of the users if it exists
+    const emailExist = getObjectByAny(users, 'email', req.body); //getting the user with the email from any of the users if it exists
     if (usernameExist) return res.status(409).send('username already exists')
     if (emailExist) return res.status(409).send('email already exists');
 
@@ -71,7 +71,7 @@ router.post('/', (req, res) => {
 
 //updating user details
 router.put('/:userId', (req, res) => {
-    const user = getElementById(users, req.params.userId)
+    const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
 
 
@@ -99,7 +99,7 @@ router.put('/:userId', (req, res) => {
     }
 
     // getting user password from secured database needed here for authorizing the user
-    const userPassword = getElementById(passwords, req.params.userId).password
+    const userPassword = getObjectById(passwords, req.params.userId).password
     if (req.body.password !== userPassword) return res.status(401).send('incorrect password'); // password is not changed here but needed for verification
 
     // if the new username and email provided are not being used then the update proceeds as expected below
@@ -114,7 +114,7 @@ router.put('/:userId', (req, res) => {
 
 
 router.patch('/:userId', (req, res) => {
-    const user = getElementById(users, req.params.userId)
+    const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
 
     const input = userPatchSchema(req.body)
@@ -130,7 +130,7 @@ router.patch('/:userId', (req, res) => {
 
     // getting user password from secured database needed here for authorizing the user
     // password is not changed here but needed for authorization purposes
-    const userPassword = getElementById(passwords, req.params.userId).password
+    const userPassword = getObjectById(passwords, req.params.userId).password
     if (req.body.password !== userPassword) return res.status(401).send('incorrect password');
 
     if (name) user.name = name //if new name is provided then update existing value to the new value
@@ -157,11 +157,11 @@ router.patch('/:userId', (req, res) => {
 
 
 router.delete('/:userId', (req, res) => {
-    const user = getElementById(users, req.params.userId)
+    const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
 
     //getting password from secured database for authorization
-    const userPassword = getElementById(passwords, req.params.userId).password //getting password from secured database
+    const userPassword = getObjectById(passwords, req.params.userId).password //getting password from secured database
     if (req.body.password !== userPassword) return res.status(401).send('incorrect password');
     const userPasswordIndex = getIndexById(passwords, req.params.userId) //getting password from secured database
     passwords.splice(userPasswordIndex, 1) // delete the user password from the server(secured database)
