@@ -42,10 +42,11 @@ router.post('/', (req, res) => {
         return;
     }
     //preventing the duplication of email addresses or usernames in the database
-    const usernameExist = getObjectByAny(users, 'username', req.body); //getting the user with the username from any of the users if it exists
+    const usernameExist = getObjectByAny(users, 'username', req.body); //getting the user with the username from any of the users if it exists    
     const emailExist = getObjectByAny(users, 'email', req.body); //getting the user with the email from any of the users if it exists
     if (usernameExist) return res.status(409).send('username already exists')
     if (emailExist) return res.status(409).send('email already exists');
+    
 
     const newUser = req.body
     const newUserChats = {id : newUser.id, chats: []} //crating an empty chats object for the new user in the database
@@ -62,7 +63,7 @@ router.post('/', (req, res) => {
     passwords.push(userPasswordInfo) //adding the password to the password dictionary. It can be gotten with the user id.
     
     allChats.push(newUserChats) //adding the empty chats array fot the user
-    users.push(newUserChats);
+    users.push(newUser);
     res.status(200).json({ 'user details': newUser })
 
 
