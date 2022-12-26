@@ -49,21 +49,21 @@ router.post('/', (req, res) => {
     
 
     const newUser = req.body
-    const newUserChats = {id : newUser.id, chats: []} //crating an empty chats object for the new user in the database
 
-    newUser.id = users.length + 1;
+    newUser.id = users.length + 1; //generate unique id for the new user
     newUser.friendsId = []; //empty array because the user doesn't have friend yet
     newUser.incomingFriendsId = []; //empty array because the user doesn't have any request friend yet
     newUser.pendingFriendsId = []; //empty array because the user haven't sent out any friend request yet
-    
+    users.push(newUser); //adding a new user to the list of users in the database
 
     //the password will be stored in a secure place in the database and will be deleted from the user's database(from req.body)
     const userPasswordInfo = { id: newUser.id, password: newUser.password }
-    delete newUser.password //deleting the password from the newUser object. It is already in where we want it stored
+    delete newUser.password //deleting the password from the newUser object. It is already in where we want it stored    
     passwords.push(userPasswordInfo) //adding the password to the password dictionary. It can be gotten with the user id.
     
-    allChats.push(newUserChats) //adding the empty chats array fot the user
-    users.push(newUser);
+    const newUserChatsObject = {id : newUser.id, chats: []} //crating an empty chats object for the new user in the database
+    allChats.push(newUserChatsObject) //adding the empty chats array fot the user
+    
     res.status(200).json({ 'user details': newUser })
 
 
