@@ -3,7 +3,7 @@ const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
 const {getObjectByAny, getObjectById,findIndexOf,} = require('../../functions') //functions to get any object in an array with the supplied arguments
-const {  friendsSchema,userChatsSchema } = require('../../schemas')
+const {  friendsSchema,userChatsSchema,friendsSchemaWithUsername,userChatsWithFriendSchema } = require('../../schemas')
 
 const router = express.Router()
 
@@ -41,7 +41,7 @@ router.get('/:userId/:friendId', (req, res) => {
     if (!user) return res.status(404).send('user not found')
     if (!friend) return res.status(404).send('friend does not exist')
 
-    const friendIdIndex = findIndexOf(user.friendsId, req.params.friendId) // i need this to check if the user and friends are truly friends
+    const friendIdIndex = findIndexOf(user.friendsId, req.params.friendId) // i need this to check if the user and the friend are truly friends
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.name} in your friend list. Please check the provided friendId`);
 
     const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
@@ -57,8 +57,34 @@ router.get('/:userId/:friendId', (req, res) => {
 
 
 //chatting between the friend
+// friendsSchemaWithUsername,userChatsWithFriendSchema
+router.post('/', (req, res) => {
+    const validation1 = friendsSchemaWithUsername(req.query)
+    if (validation1.error) {
+        res.status(400).send(validation1.error.details[0].message); //
+        return;
+    }
 
-router.post('/chatting', (req, res) => {
+    const validation2 = userChatsWithFriendSchema(req.body) //this is for the req.body which will contain the chat(texts)
+    if (validation2.error) {
+        res.status(400).send(validation2.error.details[0].message); //
+        return;
+    }
+
+    const user = getObjectById(users, req.query.userId) //getting the user object with the id
+    const  friend = getObjectByAny(users, 'username', req.query) //getting the friend object with the username
+    if (!user) return res.status(404).send('user not found')
+    if (!friend) return res.status(404).send('friend does not exist')
+
+    const friendIdIndex = findIndexOf(user.friendsId, req.params.friendId) // i need this to check if the user and the friend are truly friends
+    if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.username} in your friend list. Please check the provided friendId`);
+ 
+    const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
+    const userChatsWithTheFriend = userChats.chats.find(friend => friend.friendId ===parseInt(req.params.friendId)) //this is an object of friend and userChats
     
+    const newChats = req.body // the req.body contains the new chat that will be added to both the user and friend chat history
+
+    userChatsWithTheFriend.chats.push(newChats)
+    res.status(200).json(newChats)
 })
 module.exports = router
