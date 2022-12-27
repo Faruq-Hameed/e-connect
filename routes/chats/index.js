@@ -99,8 +99,6 @@ router.post('/', (req, res) => {
 
     userChatsWithTheFriend.lastChatted =  new Date //updating the last chatted date to today for the user
     friendChatsWithTheUser.lastChatted = new Date //updating the last chatted date to today for the friend
-   console.log({userChatsWithTheFriend});
-   console.log({friendChatsWithTheUser});
     userChatsWithTheFriend.chats[0].sent.push(newChats) //adding the new chats to the user chat history with the friend. Index 0 is the sent object and its value is array of strings
     friendChatsWithTheUser.chats[1].received.push(newChats) //adding the new chats to the friend chat history with the user. Index 1 is the received object and its value is array of strings
 
