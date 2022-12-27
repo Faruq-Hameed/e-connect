@@ -11,10 +11,12 @@ router.get('/', (req, res) => { //all chats history for all users
     res.status(200).json(allChats)
 })
 
-router.get('/:userId', (req, res) => {
+router.get('/:userId', (req, res) => { //get all chats history(object) of a user with the given userId
     const user = getObjectById(users, req.params.userId)
     const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
 
+    if(!userChats) return res.status(404).send('user account already deleted') //for a deleted user account
+    
     if (!user) return res.status(404).send('user not found')
 
     const validation = userChatsSchema(req.body) //password validation
@@ -40,6 +42,8 @@ router.get('/:userId/:friendId', (req, res) => {
     const friend = getObjectById(users, req.params.friendId) //using the provided friendId to get the friend(user) object from the database
     if (!user) return res.status(404).send('user not found')
     if (!friend) return res.status(404).send('friend does not exist')
+    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
+    if (friend.deleted) return res.status(200).send('your friend account has been deleted')//if the user has already been deleted
 
     const friendIdIndex = findIndexOf(user.friendsId, req.params.friendId) // i need this to check if the user and the friend are truly friends
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.name} in your friend list. Please check the provided friendId`);
@@ -75,6 +79,9 @@ router.post('/', (req, res) => {
     const friend = getObjectByAny(users, 'username', req.query) //getting the friend object with the username
     if (!user) return res.status(404).send('user not found')
     if (!friend) return res.status(404).send('friend does not exist')
+    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
+    if (friend.deleted) return res.status(200).send('your friend account has been deleted')//if the user has already been deleted
+
 
     const friendIdIndex = findIndexOf(user.friendsId, friend.id) // i need this to check if the user and the friend are truly friends
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.username} in your friend list. Please check the provided friendId`);
