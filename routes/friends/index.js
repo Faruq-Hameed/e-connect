@@ -43,7 +43,7 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
 
 
 //a user needs to know another user id to add them to friends list
-router.post('/addFriends', (req, res) => {
+router.post('/addFriends', (req, res) => {// for handling the sending of friend requests among users and users and the server
     const validation = friendsSchema(req.body)
     if (validation.error) {
         res.status(400).send(validation.error.details[0].message); // error handling
@@ -86,7 +86,7 @@ router.post('/addFriends', (req, res) => {
 
 })
 
-router.put('/', (req, res) => {
+router.put('/', (req, res) => { //use to handle the accepting of the friend request sent to the user
     const validation = acceptFriendSchema(req.query) //the input field must contain a boolean value for acceptRequest
     if (validation.error) {
         res.status(400).send(validation.error.details[0].message); // error handling
@@ -113,10 +113,11 @@ router.put('/', (req, res) => {
         const userChats = getObjectById(allChats, req.query.userId)//getting the user's chats object from the database(chats.js)
         const friendChats = getObjectById(allChats, req.query.friendId) //getting the friend's chats object from the database(chats.js)
 
-        const theUserAndFriendChat =  {friendId: newFriend.id, chats: ''} //creating an empty chat object for the new friend
+        const userChatsWithTheFriend =  {friendId: newFriend.id, chats: []} //creating an empty chat object for the new friend in userChatsWithTheFriend
+        const friendChatsWithTheUser = {friendId: user.id, chats: []}//creating an empty chat object for the user in friend chat
 
-        userChats.chats.push(theUserAndFriendChat) //adding the new chat object of the friend in the users's chats array
-        friendChats.chats.push(theUserAndFriendChat)//adding the same new chat object of the user in the friend's chats array   
+        userChats.chats.push(userChatsWithTheFriend) //adding the new chat object of the friend in the users's chats array
+        friendChats.chats.push(friendChatsWithTheUser)//adding the same new chat object of the user in the friend's chats array   
 
         return res.status(200).send(`friend request successfully accepted. You can message ${newFriend.username}. ${newFriend.username} will be notified`)
     }
