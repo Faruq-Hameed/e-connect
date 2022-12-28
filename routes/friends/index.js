@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectById,findIndexOf,} = require('../../functions') //functions to get any object in array with the supplied arguments
+const { getObjectById,findIndexOf,deletedUserAccount} = require('../../functions') //functions to get any object in array with the supplied arguments
 const {  friendsSchema, acceptFriendSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -29,6 +29,9 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
             if (user[arr1].length < 1) break; // if the array is empty i.e no friends, then stop the iteration and the array is returned empty
             
             let friend = getObjectById(users, user[arr1][i]) //each index(i) holds an element in the index which is an id of another user(i.e friend) object
+            if (deletedUserAccount(friend)) {
+             const deletedFriend = friend
+            }
             const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id of the friend(s)to be returned 
             userFriends[index][arr2].push(usernameAndIds) //pushing to the appropriate index(e.g index 0 is currentFriends array)
         }
@@ -45,7 +48,7 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
 
 
 //a user needs to know another user id to add them to friends list
-router.post('/addFriends', (req, res) => {// for handling the sending of friend requests among users and users and the server
+router.post('/addFriends', (req, res) => {// for handling the sending of friend requests among users and users and the server// for handling the sending of friend requests among users and users and the server
     const validation = friendsSchema(req.body)
     if (validation.error) {
         res.status(400).send(validation.error.details[0].message); // error handling
@@ -59,6 +62,9 @@ router.post('/addFriends', (req, res) => {// for handling the sending of friend 
 
     if (!user) return res.status(404).send(`user with id ${req.body.userId} does not exist`)
     if (!newFriend) return res.status(404).send(`the new friend with id ${req.body.friendId} does not exist`)
+    if (newFriend.deleted) return res.status(200).send('user account has been deleted. You cannot add him')//if the user with the id has already been deleted
+    if (user.deleted) return res.status(404).send('user account has been deleted.')//if the user with the id has already been deleted
+
     if (newFriend.deleted) return res.status(200).send('user account has been deleted. You cannot add him')//if the user with the id has already been deleted
     if (user.deleted) return res.status(404).send('user account has been deleted.')//if the user with the id has already been deleted
 
