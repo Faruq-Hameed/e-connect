@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectById,findIndexOf,} = require('../../functions') //functions to get any object in array with the supplied arguments
+const { getObjectById,findIndexOf,deletedUserAccount} = require('../../functions') //functions to get any object in array with the supplied arguments
 const {  friendsSchema, acceptFriendSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -12,8 +12,8 @@ const router = express.Router()
 router.get('/:userId/', (req, res) => { //to get all friends of a user with the userId provided in the request params
     const user = getObjectById(users, req.params.userId)// each user has friendsId so we can get the friends with their various id's 
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
-    
+    if (deletedUserAccount(user)) return true//the process will terminate here if anything is true(if the user is deleted)
+        
     //The totalFriends is the total number of friends including the current, incoming and pending friends
     const totalFriends = user.friendsId.length + user.incomingFriendsId.length + user.pendingFriendsId.length
     if (totalFriends === 0) return res.status(200).send(`${user.name} has no friends`)
@@ -29,6 +29,9 @@ router.get('/:userId/', (req, res) => { //to get all friends of a user with the 
             if (user[arr1].length < 1) break; // if the array is empty i.e no friends, then stop the iteration and the array is returned empty
             
             let friend = getObjectById(users, user[arr1][i]) //each index(i) holds an element in the index which is an id of another user(i.e friend) object
+            if (deletedUserAccount(friend)) {
+             const deletedFriend = friend
+            }
             const usernameAndIds = { id: friend.id, username: friend.username } //we only need the username and id of the friend(s)to be returned 
             userFriends[index][arr2].push(usernameAndIds) //pushing to the appropriate index(e.g index 0 is currentFriends array)
         }
@@ -60,7 +63,7 @@ router.post('/addFriends', (req, res) => {// for handling the sending of friend 
     if (!user) return res.status(404).send(`user with id ${req.body.userId} does not exist`)
     if (!newFriend) return res.status(404).send(`the new friend with id ${req.body.friendId} does not exist`)
     if (newFriend.deleted) return res.status(200).send('user account has been deleted. You cannot add him')//if the user with the id has already been deleted
-    if (user.deleted) return res.status(200).send('user account has been deleted.')//if the user with the id has already been deleted
+    if (user.deleted) return res.status(404).send('user account has been deleted.')//if the user with the id has already been deleted
 
 
     if (user.id === newFriend.id) {// incase the user supplied the same userId as friendId in the request
@@ -99,10 +102,8 @@ router.put('/', (req, res) => { //use to handle the accepting of the friend requ
     }
     const user = getObjectById(users, req.query.userId)
     const newFriend = getObjectById(users, req.query.friendId)
-    if (newFriend.deleted) {//if the user with the id has already been deleted before the request was to be accepted
-        
-        return res.status(200).send('user account has been deleted. You cannot add him')
-    }
+
+    if (user.deleted) return res.status(404).send('user account has been deleted.')
 
     const friendIdIndex = findIndexOf(user.incomingFriendsId, req.query.friendId) // to get the index of the friendId in the user's incoming friendsId
     const idInPendingFriendIds = findIndexOf(newFriend.pendingFriendsId, req.query.userId) //get the id index in the friend pending friends list if it exist there
@@ -111,7 +112,7 @@ router.put('/', (req, res) => { //use to handle the accepting of the friend requ
 
     user.incomingFriendsId.splice(friendIdIndex, 1) //removing the id from the user's incomingFriendsId since it will attended to          
     
-    if (newFriend.deleted) {//if the user with the id has already been deleted before the request was to be accepted        
+    if (newFriend.deleted) {//this is placed here so that the friend's Id in the incomingFriendsId will be deleted before returning the response        
         return res.status(200).send('user account has been deleted. You cannot add him')
     }
     newFriend.pendingFriendsId.splice(idInPendingFriendIds, 1) //removing the id from the pendingFriends id of the friend(newFriend) too
