@@ -17,5 +17,4 @@ function findIndexOf(array, element){
     return index
 }
 
-
-module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf}
+module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf, deletedUserAccount}

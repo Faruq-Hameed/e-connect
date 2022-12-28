@@ -30,6 +30,7 @@ router.get('/search/user/', (req, res) => { // you can use any params to search 
 router.get('/:userId', (req, res) => { //get a user with the given id
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
+    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
     res.status(200).json({ 'user': user })
 })
 
@@ -70,17 +71,18 @@ router.post('/', (req, res) => {
 })
 
 
-//updating user details
+//updating all details of the user with the userId
 router.put('/:userId', (req, res) => {
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
+    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
 
 
     const userIndex = getIndexById(users, req.params.userId)
-    const input = userSchema(req.body)
+    const validation = userSchema(req.body)
 
-    if (input.error) {
-        res.status(400).send(input.error.details[0].message);
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message);
         return;
     }
 
@@ -114,9 +116,10 @@ router.put('/:userId', (req, res) => {
 })
 
 
-router.patch('/:userId', (req, res) => {
+router.patch('/:userId', (req, res) => { //updating some of the details of the user
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
+    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
 
     const input = userPatchSchema(req.body)
     if (input.error) {
@@ -160,6 +163,7 @@ router.patch('/:userId', (req, res) => {
 router.delete('/:userId', (req, res) => {
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
+    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
 
     //getting password from secured database for authorization
     const userPassword = getObjectById(passwords, req.params.userId).password //getting password from secured database
@@ -169,11 +173,11 @@ router.delete('/:userId', (req, res) => {
 
 
     const userIndex = getIndexById(users, req.params.userId) //getting the index of the user to delete
-    users.splice(userIndex, 1) // delete the user from the server(users list)
+    users.splice(userIndex, 1, {id: user.id, deleted: true }) // delete the user from the server(users list) and replace with an deleted key object so that the id generation won't be affected
 
     //deleting the user chats history from the server by getting the index of the user chats in the server(chat.js)
     const userChatsIndex = getIndexById(allChats, req.params.userId)
-    allChats.splice(userChatsIndex, 1) // delete the user chats from all chats in the server(chat.js)
+    allChats.splice(userChatsIndex, 1) // delete the user chat object(histories) from allChats object in the server(chat.js)
 
     res.status(200).end('delete successful')
 })
