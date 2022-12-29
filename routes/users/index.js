@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectById, getObjectByAny, getIndexById } = require('../../functions') //functions to get any object in an array with the supplied arguments
+const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount} = require('../../functions') //functions to get any object in an array with the supplied arguments
 const { userSchema, userPatchSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -30,16 +30,16 @@ router.get('/search/user/', (req, res) => { // you can use any params to search 
 router.get('/:userId', (req, res) => { //get a user with the given id
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user with id ${req.params.userId} not found`)
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted. return true so that the process can terminate here
     res.status(200).json({ 'user': user })
 })
 
 
 //new user sign up request
 router.post('/', (req, res) => {
-    const input = userSchema(req.body) //validating req.body with schema
-    if (input.error) {
-        res.status(400).send(input.error.details[0].message);
+    const validation = userSchema(req.body) //validating req.body with schema
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message);
         return;
     }
     //preventing the duplication of email addresses or usernames in the database
@@ -52,6 +52,7 @@ router.post('/', (req, res) => {
     const newUser = req.body
 
     newUser.id = users.length + 1; //generate unique id for the new user
+    newUser.status = 'active'; //the user is active since he his just signing up
     newUser.friendsId = []; //empty array because the user doesn't have friend yet
     newUser.incomingFriendsId = []; //empty array because the user doesn't have any request friend yet
     newUser.pendingFriendsId = []; //empty array because the user haven't sent out any friend request yet
@@ -75,8 +76,7 @@ router.post('/', (req, res) => {
 router.put('/:userId', (req, res) => {
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
-
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted and return true to terminate the process here
 
     const userIndex = getIndexById(users, req.params.userId)
     const validation = userSchema(req.body)
@@ -119,18 +119,17 @@ router.put('/:userId', (req, res) => {
 router.patch('/:userId', (req, res) => { //updating some of the details of the user
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
-
-    const input = userPatchSchema(req.body)
-    if (input.error) {
-        res.status(400).send(input.error.details[0].message);
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted the response is returned and the process terminates
+    
+    const validation = userPatchSchema(req.body)
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message);
         return;
     }
 
 
-
-    //any of these inputs if present will be updated to the new value
-    const { name, email, username } = req.body //any of these inputs if present will be updated to the new value
+    //any of these keys if present will be updated to the new value
+    const { name, email, username } = req.body //any of these keys if present will be updated to the new value
 
     // getting user password from secured database needed here for authorizing the user
     // password is not changed here but needed for authorization purposes
@@ -163,17 +162,16 @@ router.patch('/:userId', (req, res) => { //updating some of the details of the u
 router.delete('/:userId', (req, res) => {
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
-
+    if (deletedUserAccount(user, res)) return true //return true needed to terminate the process
     //getting password from secured database for authorization
     const userPassword = getObjectById(passwords, req.params.userId).password //getting password from secured database
     if (req.body.password !== userPassword) return res.status(401).send('incorrect password');
-    const userPasswordIndex = getIndexById(passwords, req.params.userId) //getting password from secured database
+    const userPasswordIndex = getIndexById(passwords, req.params.userId) //getting password index from secured database
     passwords.splice(userPasswordIndex, 1) // delete the user password from the server(secured database)
 
 
     const userIndex = getIndexById(users, req.params.userId) //getting the index of the user to delete
-    users.splice(userIndex, 1, {id: user.id, deleted: true }) // delete the user from the server(users list) and replace with an deleted key object so that the id generation won't be affected
+    users.splice(userIndex, 1, {id: user.id, status: 'deleted' }) // delete the user from the server(users list) and replace with an deleted key object so that the id generation won't be affected
 
     //deleting the user chats history from the server by getting the index of the user chats in the server(chat.js)
     const userChatsIndex = getIndexById(allChats, req.params.userId)

@@ -17,5 +17,17 @@ function findIndexOf(array, element){
     return index
 }
 
+function deletedUserAccount(user, res) {//if the current user's account has already been deleted and the client is doing something on behalf of the user
+    if (user.status === 'deleted') {
+        res.status(400).send('user account has been deleted')
+        return true
+    }
+}
 
-module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf}
+function deletedFriendAccount(friend,res){ //if the user has already been deleted and another user is trying to reach the account
+    if (friend.status === 'deleted') {
+        res.status(400).send('user account has been deleted. You cannot connect him again')
+        return true
+    }
+}
+module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf, deletedUserAccount, deletedFriendAccount}
