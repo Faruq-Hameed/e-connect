@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectByAny, getObjectById, findIndexOf, } = require('../../functions') //functions to get any object in an array with the supplied arguments
+const { getObjectByAny, getObjectById, findIndexOf,deletedUserAccount, deletedFriendAccount } = require('../../functions') //functions to get any object in an array with the supplied arguments
 const { friendsSchema, userChatsSchema, friendsSchemaWithUsername, userChatsWithFriendSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -14,9 +14,7 @@ router.get('/', (req, res) => { //all chats history for all users
 router.get('/:userId', (req, res) => { //get all chats history(object) of a user with the given userId
     const user = getObjectById(users, req.params.userId)
     const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
-
-    if(!userChats) return res.status(404).send('user account already deleted') //for a deleted user account
-    
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted. return true so that the process can terminate here    
     if (!user) return res.status(404).send('user not found')
 
     const validation = userChatsSchema(req.body) //password validation
@@ -42,8 +40,7 @@ router.get('/:userId/:friendId', (req, res) => {
     const friend = getObjectById(users, req.params.friendId) //using the provided friendId to get the friend(user) object from the database
     if (!user) return res.status(404).send('user not found')
     if (!friend) return res.status(404).send('friend does not exist')
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
-    if (friend.deleted) return res.status(200).send('your friend account has been deleted')//if the user has already been deleted
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted. return true so that the process can terminate here
 
     const friendIdIndex = findIndexOf(user.friendsId, req.params.friendId) // i need this to check if the user and the friend are truly friends
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.name} in your friend list. Please check the provided friendId`);
@@ -74,17 +71,14 @@ router.post('/', (req, res) => {
         res.status(400).send(validation2.error.details[0].message); //
         return;
     }
-
-    const user = getObjectById(users, req.query.userId) //getting the user object with the id
-    const friend = getObjectByAny(users, 'username', req.query) //getting the friend object with the username
+    const user = getObjectByAny(users, 'username', req.query) //getting the user object with the username
+    const friend= getObjectById(users, req.query.friendId) //getting the friend object with the id
     if (!user) return res.status(404).send('user not found')
     if (!friend) return res.status(404).send('friend does not exist')
-    if (user.deleted) return res.status(200).send('user account has been deleted')//if the user has already been deleted
-    if (friend.deleted) return res.status(200).send('your friend account has been deleted')//if the user has already been deleted
-
-
+    
     const friendIdIndex = findIndexOf(user.friendsId, friend.id) // i need this to check if the user and the friend are truly friends
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.username} in your friend list. Please check the provided friendId`);
+    if (deletedFriendAccount(friend, res)) return true //The user can no longer chat with the friend whose account has been deleted
 
     const userChats = getObjectById(allChats, req.query.userId)//getting all the user's chats from the database(chats.js)
     const friendChats = getObjectById(allChats, friend.id) //using the friend id to get all the friend's chats(object) with all his friends

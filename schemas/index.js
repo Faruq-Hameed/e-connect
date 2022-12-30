@@ -45,9 +45,9 @@ function userChatsSchema(input){
     return schema.validate(input)
 }
 
-function friendsSchemaWithUsername(input){ //using the username field in the req.query 
+function friendsSchemaWithUsername(input){ //for chatting validation of the username and friendId
     const schema = Joi.object({
-        userId : Joi.string().alphanum().required(),
+        friendId : Joi.string().alphanum().required(),
         username: Joi.string().alphanum().required() //the username is the friend username not the user's own
     })
     return schema.validate(input)
@@ -55,7 +55,7 @@ function friendsSchemaWithUsername(input){ //using the username field in the req
 
 function userChatsWithFriendSchema(input){
     const schema = Joi.object({
-        texts: Joi.string().alphanum().required() //this is the chat(texts) between the user and the friend
+        texts: Joi.string().required() //this is the chat(texts) between the user and the friend
     })
     return schema.validate(input)
 }
