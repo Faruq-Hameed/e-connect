@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectByAny, getObjectById, findIndexOf,deletedUserAccount, deletedFriendAccount } = require('../../functions') //functions to get any object in an array with the supplied arguments
+const { getObjectByAny, getObjectById,getIndexById, findIndexOf,deletedUserAccount, deletedFriendAccount } = require('../../functions') //functions to get any object in an array with the supplied arguments
 const { friendsSchema, userChatsSchema, friendsSchemaWithUsername, userChatsWithFriendSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -46,6 +46,8 @@ router.get('/:userId/:friendId', (req, res) => {
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.name} in your friend list. Please check the provided friendId`);
 
     const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
+    
+    if(userChats.chats.length === 0) return res.status(200).send('You have no chats history with any user')
     const userChatsWithTheFriend = userChats.chats.find(friend => friend.friendId === parseInt(req.params.friendId))
 
     if (userChatsWithTheFriend.chats.length === 0) { //if user and friends are truly friend but no chat history is available
@@ -104,5 +106,52 @@ router.post('/', (req, res) => {
     friendChatsWithTheUser.chats[1].received.push(newChats) //adding the new chats to the friend chat history with the user. Index 1 is the received object and its value is array of strings
 
     res.status(200).json(newChats)
+})
+
+router.delete('/:userId/:friendId/', (req, res)=>{//router for clearing chat history with the a particular friend
+    const user = getObjectById(users, req.params.userId)
+    if (!user) return res.status(404).send('user not found')
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted. return true so that the process can terminate here
+
+    const friendIdIndex = findIndexOf(user.friendsId, req.params.friendId) // i need this to check if the user and the friend are truly friends
+    if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.username} in your friend list. Please check the provided friendId`);   
+
+    const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
+    if(userChats.chats.length === 0) return res.status(200).send('You have no chats history with any user')
+    const userChatsWithTheFriend = userChats.chats.find(friend => friend.friendId === parseInt(req.params.friendId))
+
+    userChatsWithTheFriend.chats = [] //turning the chat history into an empty array
+
+    delete userChatsWithTheFriend.lastChatted //deleting the time stamp of the last chat
+    res.status(200).send('chat history successfully cleared')
+
+})
+
+router.delete('/:userId/', (req, res) => { //delete the chat history of a user
+    const user = getObjectById(users, req.params.userId)
+    if (!user) return res.status(404).send('user not found')
+    if (deletedUserAccount(user, res)) return true //if the user has already been deleted. return true so that the process can terminate here    
+    
+    const userChatsIndex = getIndexById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
+
+    // const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
+
+    const validation = userChatsSchema(req.body) //password validation
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message); //
+        return;
+    }
+
+    const userPassword = getObjectById(passwords, user.id) //getting the user password to check against the password field in
+
+    if (req.body.password !== userPassword.password) { //password is a key in the userPassword object
+        return res.status(403).send('incorrect password')
+    }
+
+    allChats[userChatsIndex].chats = []
+    // allChats.splice(userChatsIndex,1)
+
+    res.status(200).send('Chat histories successfully cleared')
+
 })
 module.exports = router
