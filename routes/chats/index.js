@@ -3,7 +3,7 @@ const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
 const { getObjectByAny, getObjectById,getIndexById, findIndexOf,deletedUserAccount, deletedFriendAccount } = require('../../functions') //functions to get any object in an array with the supplied arguments
-const { friendsSchema, userChatsSchema, friendsSchemaWithUsername, userChatsWithFriendSchema } = require('../../schemas')
+const { friendsSchema, userPasswordSchema, friendsSchemaWithUsername, userChatsWithFriendSchema } = require('../../schemas')
 
 const router = express.Router()
 
@@ -17,7 +17,7 @@ router.get('/:userId', (req, res) => { //get all chats history(object) of a user
     if (deletedUserAccount(user, res)) return true //if the user has already been deleted. return true so that the process can terminate here    
     if (!user) return res.status(404).send('user not found')
 
-    const validation = userChatsSchema(req.body) //password validation
+    const validation = userPasswordSchema(req.body) //password validation
     if (validation.error) {
         res.status(400).send(validation.error.details[0].message); //
         return;
@@ -136,7 +136,7 @@ router.delete('/:userId/', (req, res) => { //delete the chat history of a user
 
     // const userChats = getObjectById(allChats, req.params.userId)//getting all the user's chats from the database(chats.js)
 
-    const validation = userChatsSchema(req.body) //password validation
+    const validation = userPasswordSchema(req.body) //password validation
     if (validation.error) {
         res.status(400).send(validation.error.details[0].message); //
         return;

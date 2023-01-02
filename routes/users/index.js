@@ -2,8 +2,8 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount} = require('../../functions') //functions to get any object in an array with the supplied arguments
-const { userSchema, userPatchSchema } = require('../../schemas')
+const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount,generateOtp} = require('../../functions') //functions to get any object in an array with the supplied arguments
+const { userSchema, userPatchSchema ,userPasswordSchema} = require('../../schemas')
 
 const router = express.Router()
 
@@ -159,16 +159,41 @@ router.patch('/:userId', (req, res) => { //updating some of the details of the u
 })
 
 
-router.delete('/:userId', (req, res) => {
+router.get('/:userId/delete/otp', (req, res) => {
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
     if (deletedUserAccount(user, res)) return true //return true needed to terminate the process
-    //getting password from secured database for authorization
+
+    const validation = userPasswordSchema(req.body) //password validation
+    if (validation.error) {
+        res.status(400).send(validation.error.details[0].message); //
+        return;
+    }
+
     const userPassword = getObjectById(passwords, req.params.userId).password //getting password from secured database
     if (req.body.password !== userPassword) return res.status(401).send('incorrect password');
+
+    user.otp = generateOtp()
+
+    setTimeout(()=>{ //the generated otp will be cleared after 1 minute
+        delete user.otp
+    },60000)
+
+    res.status(200).send('confirm the OTP sent to you. It will expire in a minute');
+})
+
+router.delete('/:userId', (req, res)=>{
+    const user = getObjectById(users, req.params.userId)
+    if (!user) return res.status(404).send(`user not found`) //for unknown userId
+    if (deletedUserAccount(user, res)) return true //return true needed to terminate the process
+
+    const otp = user.otp //the otp sent to the user account will be used for authorizing the delete
+    if (otp && parseInt(req.query.otp) !== otp) return res.status(401).send('incorrect otp check the otp and try again'); //if the user provided a wrong otp
+    if (!otp) return res.status(410).send('kindly generate a new otp and try again');//supplying otp when it is not existing
+   
+    //if the user provided a correct otp then we delete request is carried out
     const userPasswordIndex = getIndexById(passwords, req.params.userId) //getting password index from secured database
     passwords.splice(userPasswordIndex, 1) // delete the user password from the server(secured database)
-
 
     const userIndex = getIndexById(users, req.params.userId) //getting the index of the user to delete
     users.splice(userIndex, 1, {id: user.id, status: 'deleted' }) // delete the user from the server(users list) and replace with an deleted key object so that the id generation won't be affected

@@ -38,7 +38,7 @@ function acceptFriendSchema(input) { //for friend requests (put request)
     return schema.validate(input)
 }
 
-function userChatsSchema(input){
+function userPasswordSchema(input){//passworrd validation schema
     const schema = Joi.object({ 
         password: Joi.string().alphanum().min(3).max(16).required(),
     })
@@ -60,6 +60,6 @@ function userChatsWithFriendSchema(input){
     return schema.validate(input)
 }
 
-module.exports ={userSchema,userPatchSchema,friendsSchema,acceptFriendSchema,userChatsSchema,
+module.exports ={userSchema,userPatchSchema,friendsSchema,acceptFriendSchema,userPasswordSchema,
     friendsSchemaWithUsername,userChatsWithFriendSchema
 }

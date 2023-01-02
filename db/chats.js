@@ -11,9 +11,9 @@ const allChats = [
     {
         id: 2,
         chats: [
-            // { friendId: 6, chats: [{sent:['hello user6']}, {received: ['hello user2']}], lastChatted: new Date },
-            // { friendId: 3, chats: [{sent:['hello user3']},{received: ['hello user2']}], lastChatted: new Date },
-            // { friendId: 5, chats: [{sent:['hello user5']},{received: ['hello user2']}], lastChatted: new Date },
+            { friendId: 6, chats: [{sent:['hello user6']}, {received: ['hello user2']}], lastChatted: new Date },
+            { friendId: 3, chats: [{sent:['hello user3']},{received: ['hello user2']}], lastChatted: new Date },
+            { friendId: 5, chats: [{sent:['hello user5']},{received: ['hello user2']}], lastChatted: new Date },
 
         ]
     },

@@ -30,4 +30,9 @@ function deletedFriendAccount(friend,res){ //if the user has already been delete
         return true
     }
 }
-module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf, deletedUserAccount, deletedFriendAccount}
+
+
+function generateOtp() { //generates a random number(between 13029 and 99918) of 5 characters as otp for a user 
+    return Math.floor(Math.random() * (99918 -13029 ) + 13029);
+  }
+module.exports = {getObjectById, getObjectByAny, getIndexById, findIndexOf, deletedUserAccount, deletedFriendAccount,generateOtp}
