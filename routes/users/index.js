@@ -12,6 +12,12 @@ router.get('/', (req, res) => {
 })
 
 router.get('/search/user/', (req, res) => { // you can use any params to search for a user
+
+    if ( Object.keys(req.query).length === 0)    { //check if the query has any key and check the length
+        res.status(400).send('search query is required')// incase the user did not provide a search query
+        return
+    }
+   
     let user;
     if (req.query.username) {//using username to get a particular user 
         user = getObjectByAny(users, 'username', req.query)
@@ -23,8 +29,8 @@ router.get('/search/user/', (req, res) => { // you can use any params to search 
         user = getObjectByAny(users, 'email', req.query)
     }
     if (!user) return res.status(404).send(`user not found`) //for unknown users
-
-    res.status(200).json({ 'user': user })
+    
+    res.status(200).json({ 'user': user })  
 })
 
 router.get('/:userId', (req, res) => { //get a user with the given id
