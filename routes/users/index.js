@@ -165,7 +165,7 @@ router.patch('/:userId', (req, res) => { //updating some of the details of the u
 })
 
 
-router.get('/:userId/delete/otp', (req, res) => {
+router.get('/:userId/delete/otp', (req, res) => {// user must get an otp to authenticate his account deletion
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
     if (deletedUserAccount(user, res)) return true //return true needed to terminate the process
@@ -188,7 +188,7 @@ router.get('/:userId/delete/otp', (req, res) => {
     res.status(200).send('confirm the OTP sent to you. It will expire in a minute');
 })
 
-router.delete('/:userId', (req, res)=>{
+router.delete('/:userId', (req, res)=>{//A user can only delete his account if he has the correct otp
     const user = getObjectById(users, req.params.userId)
     if (!user) return res.status(404).send(`user not found`) //for unknown userId
     if (deletedUserAccount(user, res)) return true //return true needed to terminate the process

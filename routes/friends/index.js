@@ -2,7 +2,7 @@ const express = require('express');
 const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
-const { getObjectById,findIndexOf,deletedUserAccount, deletedFriendAccount} = require('../../functions') //functions to get any object in array with the supplied arguments
+const { getObjectById,findIndexOf,getIndexById,deletedUserAccount, deletedFriendAccount} = require('../../functions') //functions to get any object in array with the supplied arguments
 const {  friendsSchema, acceptFriendSchema } = require('../../schemas')
 
 const router = express.Router()
@@ -169,10 +169,10 @@ router.delete('/', (req, res) =>{ //deleting a friend of the user
     }
 
     const user = getObjectById(users, req.query.userId) //using the provided userId to get the user object from the database
-    if (!user) return res.status(404).send(`user with id ${req.body.userId} does not exist`)
+    if (!user) return res.status(404).send(`user with id ${req.query.userId} does not exist`)
 
     const friend = getObjectById(users, req.query.friendId) //using the provided friendId to get the friend(user) object from the database
-    if (!friend) return res.status(404).send(`the new friend with id ${req.body.friendId} does not exist`)
+    if (!friend) return res.status(404).send(`the new friend with id ${req.query.friendId} does not exist`)
 
 
     const friendIdIndex = findIndexOf(user.friendsId, req.query.friendId)   // to find the index of the friend id in the user's friendsId
