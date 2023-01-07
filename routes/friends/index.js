@@ -182,7 +182,8 @@ router.delete('/', (req, res) =>{ //deleting a friend of the user
 
     //the user will loose the chats histories with the friend after deleting the friend
     const userChats = getObjectById(allChats, req.query.userId)//getting all the user's chats from the database(chats.js)
-    const userChatsWithTheFriendIndex = getIndexById(userChats, req.query.friendId)//getting the index of the user and friend chats in user chats
+    console.log(userChats)
+    const userChatsWithTheFriendIndex = getIndexById(userChats.chats, req.query.friendId)//getting the index of the user and friend chats in user chats(object)
     userChats.chats.splice(userChatsWithTheFriendIndex, 1) // deleting the chats
 
     user.friendsId.splice(friendIdIndex, 1) //removing the id from the user's friends list 

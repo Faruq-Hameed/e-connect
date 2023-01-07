@@ -3,7 +3,7 @@ const Joi = require('joi')
 
 const { users, allChats, passwords } = require('../../db');
 const { getObjectByAny, getObjectById,getIndexById, findIndexOf,deletedUserAccount, deletedFriendAccount } = require('../../functions') //functions to get any object in an array with the supplied arguments
-const { friendsSchema, userPasswordSchema, friendsSchemaWithUsername, userChatsWithFriendSchema } = require('../../schemas')
+const { userPasswordSchema, friendsSchemaWithUsername, userChatsWithFriendSchema } = require('../../schemas')
 
 const router = express.Router()
 
@@ -82,9 +82,10 @@ router.post('/', (req, res) => {
     if (friendIdIndex < 0) return res.status(404).send(`no friend with name ${friend.username} in your friend list. Please check the provided friendId`);
     if (deletedFriendAccount(friend, res)) return true //The user can no longer chat with the friend whose account has been deleted
 
-    const userChats = getObjectById(allChats, req.query.userId)//getting all the user's chats from the database(chats.js)
+    const userChats = getObjectById(allChats, user.id)//getting all the user's chats from the database(chats.js)
     const friendChats = getObjectById(allChats, friend.id) //using the friend id to get all the friend's chats(object) with all his friends
-
+    console.log('userChats ', userChats);
+    console.log('friendChats ', friendChats);
     const userChatsWithTheFriend = userChats.chats.find(chatObj => chatObj.friendId === friend.id) //this is an object of friend and user Chats in all chats of the user
     const friendChatsWithTheUser = friendChats.chats.find(chatObj => chatObj.friendId === user.id) //the chat of the friend with the user from the friend chats object
 
