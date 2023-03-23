@@ -1,9 +1,9 @@
 const express = require('express');
 const Joi = require('joi')
 
-const { users, allChats, passwords } = require('../../db');
-const { getObjectById,findIndexOf,getIndexById,deletedUserAccount, deletedFriendAccount} = require('../../functions') //functions to get any object in array with the supplied arguments
-const {  friendsSchema, acceptFriendSchema } = require('../../schemas')
+const { users, allChats, passwords } = require('../../src/db');
+const { getObjectById,findIndexOf,getIndexById,deletedUserAccount, deletedFriendAccount} = require('../../src/functions') //functions to get any object in array with the supplied arguments
+const {  friendsSchema, acceptFriendSchema } = require('../../src/schemas')
 
 const router = express.Router()
 

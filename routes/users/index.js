@@ -1,9 +1,9 @@
 const express = require('express');
 const Joi = require('joi')
 
-const { users, allChats, passwords } = require('../../db');
-const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount,generateOtp} = require('../../functions') //functions to get any object in an array with the supplied arguments
-const { userSchema, userPatchSchema ,userPasswordSchema} = require('../../schemas')
+const { users, allChats, passwords } = require('../../src/db');
+const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount,generateOtp} = require('../../src/functions') //functions to get any object in an array with the supplied arguments
+const { userSchema, userPatchSchema ,userPasswordSchema} = require('../../src/schemas')
 
 const router = express.Router()
 
