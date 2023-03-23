@@ -1,0 +1,6 @@
+# GET http://localhost:5000/users
+
+GET http://localhost:5000/api/users/2/delete/otp
+
+
+# POST http://localhost:5000/users
