@@ -8,3 +8,7 @@ const usersPasswords = [
 ]
 
 module.exports = usersPasswords
+
+const crypto = require('crypto');
+const {User} = require('./models')
+

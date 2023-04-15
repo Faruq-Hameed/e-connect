@@ -3,7 +3,7 @@ const logger = require('morgan')
 require('dotenv').config({path: './.env'})
 const Helmet = require('helmet')
 const startServer = require('./src/db/connection')
-const {users, friends, chats} = require('./routes')
+const {users, friends, chats} = require('./src/routes')
 
 const app = express()
 const port = process.env.PORT || 3000

@@ -14,6 +14,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'please choose a user name']
     },
+    phone: {
+        type: String,
+        validate: {
+          validator: function(v) {
+            return /\d{3}-\d{3}-\d{4}/.test(v);
+          },
+          message: props => `${props.value} is not a valid phone number!`
+        },
+        required: [true, 'User phone number required']
+      },
     email: {
         type: String,
         required: [true, 'please provide your email address']
@@ -22,39 +32,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'please provide your password']
     },
-    friends: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }
-    ],
-    friends: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }
-    ],
-    incomingFriendsId: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }
-    ],
-    pendingFriendsId: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }
-    ],
-
-
     role: {
         type: String,
         enum: ['admin', 'user'],
         default: 'user'
+    },
+    verified:{
+        type: Boolean,
+        enum: [true, false],
+        default: false
+    },
+    status:{
+        type: String,
+        enum: ['online', 'away', 'offline'],
+        default: 'offline'
     }
 },
-    { timestamps: true }
+    { timestamps: true },
 )
 
 
@@ -75,5 +69,4 @@ userSchema.pre('save', async function(next) {
   });
 
   const User = mongoose.model('User', userSchema); 
-
 module.exports = User;

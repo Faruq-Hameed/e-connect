@@ -1,15 +1,13 @@
 const express = require('express');
 const Joi = require('joi')
 
-const { users, allChats, passwords } = require('../../src/db');
-const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount,generateOtp} = require('../../src/functions') //functions to get any object in an array with the supplied arguments
-const { userSchema, userPatchSchema ,userPasswordSchema} = require('../../src/schemas')
+const { users, allChats, passwords } = require('../../db');
+const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount,generateOtp} = require('../../functions') //functions to get any object in an array with the supplied arguments
+const { userSchema, userPatchSchema ,userPasswordSchema} = require('../../schemas')
 
 const router = express.Router()
 
-router.get('/', (req, res) => {
-    res.status(200).json({ 'all users': users })
-})
+router.get('/')
 
 router.get('/search/user/', (req, res) => { // you can use any params to search for a user
 
@@ -42,40 +40,7 @@ router.get('/:userId', (req, res) => { //get a user with the given id
 
 
 //new user sign up request
-router.post('/', (req, res) => {
-    const validation = userSchema(req.body) //validating req.body with schema
-    if (validation.error) {
-        res.status(400).send(validation.error.details[0].message);
-        return;
-    }
-    //preventing the duplication of email addresses or usernames in the database
-    const usernameExist = getObjectByAny(users, 'username', req.body); //getting the user with the username from any of the users if it exists    
-    const emailExist = getObjectByAny(users, 'email', req.body); //getting the user with the email from any of the users if it exists
-    if (usernameExist) return res.status(409).send('username already exists')
-    if (emailExist) return res.status(409).send('email already exists');
-    
-
-    const newUser = req.body
-
-    newUser.id = users.length + 1; //generate unique id for the new user
-    newUser.status = 'active'; //the user is active since he his just signing up
-    newUser.friendsId = []; //empty array because the user doesn't have friend yet
-    newUser.incomingFriendsId = []; //empty array because the user doesn't have any request friend yet
-    newUser.pendingFriendsId = []; //empty array because the user haven't sent out any friend request yet
-    users.push(newUser); //adding a new user to the list of users in the database
-
-    //the password will be stored in a secure place in the database and will be deleted from the user's database(from req.body)
-    const userPasswordInfo = { id: newUser.id, password: newUser.password }
-    delete newUser.password //deleting the password from the newUser object. It is already in where we want it stored    
-    passwords.push(userPasswordInfo) //adding the password to the password dictionary. It can be gotten with the user id.
-    
-    const newUserChatsObject = {id : newUser.id, chats: []} //crating an empty chats object for the new user in the database
-    allChats.push(newUserChatsObject) //adding the empty chats array fot the user
-    
-    res.status(200).json({ 'user details': newUser })
-
-
-})
+router.post('/',)
 
 
 //updating all details of the user with the userId
