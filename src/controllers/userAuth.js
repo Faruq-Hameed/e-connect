@@ -4,11 +4,38 @@ const jwt = require("jsonwebtoken");
 const { mail, generatePayload } = require("../../utils");
 const { User } = require("../../models");
 require("dotenv").config();
-const jwtSecret = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES = process.env.JWT_EXPIRES;
 
-const { signUpSchema, loginSchema } = require("../../utils/joiSchema");
-const { doesUserExist, generateUsername } = require("../../utils");
+const {loginSchema } = require("../utils/schemas");
+
+
+const createAccount = async (req, res) => {
+  try {
+    //validating the user's inputed data with joi schema
+    const validation = userSchema(req.body);
+    if (validation.error) {
+      res
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
+        .send(validation.error.details[0].message);
+      return;
+    }
+    //preventing the duplication of email addresses or usernames in the database
+    const userAlreadyExist = await doesUserAlreadyExist(User, validation.value);
+    if (userAlreadyExist) {
+      return res
+        .status(userAlreadyExist.status)
+        .json({ message: userAlreadyExist.message });
+    }
+
+    const newUser = new User(validation.value);
+    await newUser.save();
+    Friends.create({ user: newUser._id });
+    res.status(200).json({ data: newUser });
+  } catch (err) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
+  }
+};
 
 /**user login controller */
 const userLogin = async (req, res) => {
@@ -44,7 +71,7 @@ const userLogin = async (req, res) => {
     /*check if a user is signed in on the device(the browser) at the moment and logout the user */
     const existingToken = req.cookies.token;
     if (existingToken) {
-      const decodedToken = jwt.verify(existingToken, jwtSecret);
+      const decodedToken = jwt.verify(existingToken, JWT_SECRET);
       /**if the new user is different from the currently login user */
       if (decodedToken.userId !== user._id)
         res.clearCookie("token", {
@@ -54,13 +81,13 @@ const userLogin = async (req, res) => {
       // update the current login user isActive status to false
       await User.findByIdAndUpdate(decodedToken.userId, {
         $set: {
-          isActive: false,
+          status: 'offline'
         },
       });
     }
     /**Attaching payload to cookie * and allow it to clear automatically after expiration*/
     const payload = generatePayload(user);
-    const token = jwt.sign(payload, jwtSecret, { expiresIn: JWT_EXPIRES });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     res.cookie("token", token, {
       httpOnly: true,
       expires: new Date(Date.now() + (30 * 60 * 1000)) // 30 minutes from now,
@@ -77,15 +104,11 @@ const userLogin = async (req, res) => {
 
 /**user logout controller */
 const userLogout = async (req, res) => {
-  const { token } = req.cookies;
-
-  // fetch the user id from the token
-  const { userId } = jwt.verify(token, process.env.JWT_SECRET);
-
+ const {userId} = req.payload
   // update the user isActive status to false
   await User.findByIdAndUpdate(userId, {
     $set: {
-      isActive: false,
+     status: 'offline'
     },
   });
 
@@ -94,43 +117,7 @@ const userLogout = async (req, res) => {
     httpOnly: true,
     secure: true,
   });
-
   res.status(StatusCodes.OK).json({ message: "user logged out" });
-};
-
-const createAccount = async (req, res, next) => {
-  try {
-    //validating the user's inputed data with joi schema
-    const validation = signUpSchema(req.body);
-    if (validation.error) {
-      res
-        .status(StatusCodes.UNPROCESSABLE_ENTITY)
-        .send(validation.error.details[0].message);
-      return;
-    }
-    const userAlreadyExist = await doesUserExist(
-      User,
-      validation.value,
-      "email",
-      "phoneNumber"
-    );
-    if (userAlreadyExist) {
-      return res
-        .status(userAlreadyExist.status)
-        .json({ message: userAlreadyExist.message });
-    }
-
-    //if the validation and checking passed we create the new  user
-    const newUser = new User(validation.value);
-    newUser.username = await generateUsername(User, newUser.firstName); //generating a username for the new user
-    await newUser.save();
-    const payload = generatePayload(newUser);
-
-    req.body.payload = payload;
-    next();
-  } catch (err) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
-  }
 };
 
 const forgetPassword = async (req, res) => {
@@ -141,7 +128,11 @@ const forgetPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     //   //if user is not found , return a response of 404
-    if (!user) throw new Error("Email is not found");
+    if (!user) {
+      return res
+      .status(StatusCodes.NOT_FOUND)
+      .send({ message: "User with email address not found"})
+    }
 
     // if found, create a token
     const token = crypto.randomBytes(32).toString("hex");
@@ -226,8 +217,6 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
   createAccount,
-  forgetPassword,
-  resetPassword,
   userLogin,
   userLogout,
 };

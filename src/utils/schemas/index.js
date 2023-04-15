@@ -16,4 +16,5 @@ module.exports = {
   userPasswordSchema,
   friendsSchemaWithUsername,
   userChatsWithFriendSchema,
+  loginSchema: require('./loginSchema')
 };

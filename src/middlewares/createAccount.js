@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const generateSignUpMail = async (req, res, next) => {
   try {
-    const { payload } = req.body;
+    const { payload } = req;
 
     /** my gmail information */
 
@@ -23,36 +23,26 @@ const generateSignUpMail = async (req, res, next) => {
       },
     };
 
-    const maxAge = "10m";
-    const token = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: maxAge, // 10mins
-    });
-
-    // send the token to the database and the email address of the user
-    const user = await User.findByIdAndUpdate(payload.userId, {
-      $set: { registrationToken: token },
-    });
-
     let transporter = nodemailer.createTransport(config);
 
     let MailGenerator = new Mailgen({
       theme: "default",
       product: {
-        name: "Stutern",
+        name: "Faruq E-connect",
         link: `http://www.stutern.com`,
       },
     });
 
     let response = {
       body: {
-        name: payload.username,
+        name: payload.name + " " + payload.lName,
         intro: "Welcome Stutern Citrone Platform",
         action: {
-          instructions: "Please click the button below to verify your account",
+          instructions: "Thanks for signing up on Faruq E-connect",
           button: {
             color: "green",
-            text: "Verify email address",
-            link: `http://localhost:8070/api/citrone/email/verify/${token}`,
+            text: "login here",
+            link: "http://localhost:1235/login"
           },
         },
         outro: "happy learning. we wish you the very best",
@@ -63,8 +53,8 @@ const generateSignUpMail = async (req, res, next) => {
 
     const message = {
       from: "faruqhameed1@gmail.com", //save a sender on the .env and fetch
-      to: user.email,
-      subject: "citrone email verification one",
+      to: payload.email,
+      subject: "welocome",
       html: mail,
     };
 
@@ -108,7 +98,10 @@ const verifySignUpMail = async (req, res) => {
   }
 };
 
-module.exports = {
-  generateSignUpMail,
-  verifySignUpMail,
-};
+module.exports = generateSignUpMail;
+
+
+// module.exports = {
+//   generateSignUpMail,
+//   verifySignUpMail,
+// };
