@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const Mailgen = require("mailgen");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
-const { User } = require("../models");
+const { User } = require("../db/models");
 // require("dotenv").config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -54,17 +54,13 @@ const generateSignUpMail = async (req, res, next) => {
     const message = {
       from: "faruqhameed1@gmail.com", //save a sender on the .env and fetch
       to: payload.email,
-      subject: "welocome",
+      subject: "welcome",
       html: mail,
     };
 
-    transporter.sendMail(message).then((info) => {
-      return res.status(201).json({
-        msg: "check your email for verification",
-        info: info.messageId,
-        preview: nodemailer.getTestMessageUrl(info),
-      });
-    });
+    await transporter.sendMail(message)
+    res.status(200).json({message: "account created successfully", data: req.payload });
+
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

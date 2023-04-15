@@ -1,7 +1,7 @@
 function getObjectById(array, id) {
     const object = array.find(obj => obj.id === parseInt(id))
     return object
-}
+} 
 
 function getIndexById(array, id) {
     const index = array.findIndex(obj => obj.id === parseInt(id))

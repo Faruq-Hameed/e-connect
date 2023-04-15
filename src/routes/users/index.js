@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi')
 const router = express.Router()
+const { authentication, generateSignUpMail } = require("../../middlewares");
 
 // const { users, allChats, passwords } = require('../../db');
 // const { getObjectById, getObjectByAny, getIndexById ,deletedUserAccount,generateOtp} = require('../../functions') //functions to get any object in an array with the supplied arguments
@@ -13,19 +14,19 @@ const {
 /**get all users route */
 router.get('/getAllUsers', getAllUsersAccount)
 
-/**get a user by userId in the payload */
-router.get('/', getUserAccount)
-
 /**Search for user with any of the search query */
 router.get('/search', findUser)
 
 /**Create a user account */
-router.post('/', createAccount)
+router.post('/', createAccount, generateSignUpMail)
 
 /**user login route */
-router.post('login', userLogin)
+router.post('/login', userLogin)
 
-
+// PROTECTED ROUTES
+router.use('/', authentication)
+/**get a user by userId in the payload */
+router.get('/',getUserAccount)
 /**user logout route */
 router.get('/logout', userLogout)
 

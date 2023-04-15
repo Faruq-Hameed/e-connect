@@ -1,16 +1,18 @@
 const { StatusCodes } = require("http-status-codes");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
-const { mail, generatePayload } = require("../../utils");
-const { User } = require("../../models");
+const { generatePayload,doesUserAlreadyExist } = require("../utils");
+const { User } = require("../db/models");
 require("dotenv").config();
+const {userSchema} = require("../utils/schemas")
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES = process.env.JWT_EXPIRES;
 
 const {loginSchema } = require("../utils/schemas");
 
-
-const createAccount = async (req, res) => {
+ 
+const createAccount = async (req, res,next) => {
   try {
     //validating the user's inputed data with joi schema
     const validation = userSchema(req.body);
@@ -30,8 +32,8 @@ const createAccount = async (req, res) => {
 
     const newUser = new User(validation.value);
     await newUser.save();
-    Friends.create({ user: newUser._id });
-    res.status(200).json({ data: newUser });
+    req.payload = newUser
+    next()
   } catch (err) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
   }
@@ -40,10 +42,8 @@ const createAccount = async (req, res) => {
 /**user login controller */
 const userLogin = async (req, res) => {
   // Check if a user is active at the moment on the device
-
   /**Validate the data in the req.body */
   const validation = loginSchema(req.body);
-
   const { error, value } = validation;
   if (error) {
     return res
@@ -71,7 +71,7 @@ const userLogin = async (req, res) => {
     /*check if a user is signed in on the device(the browser) at the moment and logout the user */
     const existingToken = req.cookies.token;
     if (existingToken) {
-      const decodedToken = jwt.verify(existingToken, JWT_SECRET);
+      console.log({decodedToken})
       /**if the new user is different from the currently login user */
       if (decodedToken.userId !== user._id)
         res.clearCookie("token", {
@@ -88,6 +88,7 @@ const userLogin = async (req, res) => {
     /**Attaching payload to cookie * and allow it to clear automatically after expiration*/
     const payload = generatePayload(user);
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    console.log({token})
     res.cookie("token", token, {
       httpOnly: true,
       expires: new Date(Date.now() + (30 * 60 * 1000)) // 30 minutes from now,

@@ -1,4 +1,3 @@
-const express = require('express')
 const Joi = require('joi')
 
 function userSchema(input) { //user sign up schema (post & put request)

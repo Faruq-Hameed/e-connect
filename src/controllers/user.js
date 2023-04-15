@@ -64,7 +64,7 @@ const findUser = async (req, res) => {
     });
 };
 
-
+ 
 const updateUser = async(req, res) => {
   const user = getObjectById(users, req.params.userId)
   if (!user) return res.status(404).send(`user not found`) //for unknown userId
