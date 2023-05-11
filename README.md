@@ -1,4 +1,3 @@
 # e-connect
-# e-connect
-# A social network where users can connect to and interact with one another.
-# Strictly backend logics
+# Strictly the server side codes!
+- **E-Connect** is an innovative instant messaging web application that offers users a platform to communicate effectively with friends. The application allows users to perform essential CRUD operations on all routes, such as creating, reading, updating, and deleting messages. Furthermore, authentication has been implemented to ensure that users must accept a friend request before engaging in chat conversations with other users, ensuring a high level of privacy and security. The project is still ongoing, but users can successfully perform most CRUD operations, enhancing their overall experience. The use of modern technologies such as JSON Web Tokens (JWT) and Socket.IO further enhances the application's functionality, ensuring a seamless and secure messaging experience. E-Connect is an excellent solution for anyone seeking an efficient and secure messaging platform.
