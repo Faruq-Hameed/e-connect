@@ -38,7 +38,7 @@ const createAccount = async (req, res,next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
   }
 };
-
+ 
 /**user login controller */
 const userLogin = async (req, res) => {
   // Check if a user is active at the moment on the device
@@ -50,7 +50,7 @@ const userLogin = async (req, res) => {
       .status(StatusCodes.UNPROCESSABLE_ENTITY)
       .json({ message: error.details[0].message });
   }
-
+ 
   try {
     /**find a user with the provided email and check if the email and password matched */
     const { email, password } = value;
@@ -69,7 +69,6 @@ const userLogin = async (req, res) => {
     }
 
     /*check if a user is signed in on the device(the browser) at the moment and logout the user */
-    const existingToken = req.cookies.token;
     if (existingToken) {
       console.log({decodedToken})
       /**if the new user is different from the currently login user */
